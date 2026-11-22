@@ -4,7 +4,7 @@
  *
  * 兩種登入：(a) Google 登入元件（彈出視窗，token model）(b) 整頁轉址（implicit flow，回來時通行證在網址 # 後面）。
  * 🔴 通行證只放在記憶體變數裡：⛔ 不印在畫面或 console、⛔ 不存 localStorage／sessionStorage；轉址回來後馬上把網址的 # 清掉。
- * 🔴 權限只要 drive.file：只碰得到這個試作自己建的檔。localStorage 只存試算表編號與最後寫入的那一列（都不是通行證）。
+ * 🔴 權限只要 drive.file：只碰得到這個試作自己建的檔。localStorage 只存試算表編號、最後寫入的那一列、記錄、帳號提示、轉址暗號（都不是通行證）。
  * 用戶端 ID 由 config.js 提供（匯出工具寫入，來源在 local/，不進版控）。
  */
 (function (root) {
@@ -81,20 +81,24 @@
   var tok = null;            // { value, expAt, via }：⛔ 只在記憶體
   var gisClient = null, gisPending = null;
   var LOG_KEY = 'gauth-probe-log', SHEET_KEY = 'gauth-probe-sheet', LAST_KEY = 'gauth-probe-last', REDIR_KEY = 'gauth-probe-redirect';
-  // 帳號提示（login_hint）：登入成功後向 Drive 問「這是誰」，存在 sessionStorage（分頁關掉就沒了；⛔ 不顯示在畫面上，只顯示有／沒有）。
+  // 帳號提示（login_hint）：登入成功後向 Drive 問「這是誰」（⛔ 不顯示在畫面上，只顯示有／沒有）。
   // 為什麼要：瀏覽器同時登入多個 Google 帳號時，prompt=none 不知道選哪個會回 interaction_required（2026-11-22 桌機實測）。
   var HINT_KEY = 'gauth-probe-hint';
+  // 記錄、帳號提示、轉址暗號一律存 localStorage（整個網站共用）：Android 實測（2026-11-22）轉址回來落在另一個視窗，
+  // sessionStorage 是每個視窗各一份 ⇒ 暗號對不上、記錄也不見。WIN＝這個視窗的代號（存 sessionStorage），每行記錄標上，看得出有沒有換窗。
+  var WIN_KEY = 'gauth-probe-win';
 
   function store(kind) { try { return kind === 's' ? root.sessionStorage : root.localStorage; } catch (e) { return null; } }
   function get(kind, k) { try { var s = store(kind); return s ? s.getItem(k) : null; } catch (e) { return null; } }
   function put(kind, k, v) { try { var s = store(kind); if (s) { if (v === null) s.removeItem(k); else s.setItem(k, v); } } catch (e) { /* 存不了就算了 */ } }
+  var WIN = get('s', WIN_KEY) || (function () { var w = Math.random().toString(36).slice(2, 5); put('s', WIN_KEY, w); return w; })();
 
   function hhmmss(d) { return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return (n < 10 ? '0' : '') + n; }).join(':'); }
-  function readLog() { try { return JSON.parse(get('s', LOG_KEY) || '[]'); } catch (e) { return []; } }
+  function readLog() { try { return JSON.parse(get('l', LOG_KEY) || '[]'); } catch (e) { return []; } }
   function log(step, ok, ms, note) {
     var list = readLog();
-    list.push({ t: hhmmss(new Date()), step: step, ok: ok, ms: ms, note: note || '' });
-    put('s', LOG_KEY, JSON.stringify(list.slice(-80)));
+    list.push({ t: hhmmss(new Date()) + ' 窗' + WIN, step: step, ok: ok, ms: ms, note: note || '' });
+    put('l', LOG_KEY, JSON.stringify(list.slice(-80)));
     drawLog();
   }
   function drawLog() {
@@ -112,16 +116,16 @@
     $('tok').textContent = !tok ? '沒有（還沒登入，或已丟掉）' : left === 0 ? '已過期（' + tok.via + '）' : '有，約剩 ' + Math.ceil(left / 60) + ' 分鐘（' + tok.via + '）';
     var id = get('l', SHEET_KEY);
     $('sheet').textContent = id ? '有（編號末 6 碼 …' + id.slice(-6) + '）' : '還沒有';
-    $('hint').textContent = get('s', HINT_KEY) ? '有（不動手重拿時會告訴 Google 用這個帳號）' : '沒有（登入成功後自動取得）';
+    $('hint').textContent = get('l', HINT_KEY) ? '有（不動手重拿時會告訴 Google 用這個帳號）' : '沒有（登入成功後自動取得）';
   }
 
   function setToken(value, expiresIn, via) {
     tok = { value: value, expAt: expiresIn ? Date.now() + expiresIn * 1000 : null, via: via };
     drawStatus();
-    if (!get('s', HINT_KEY)) {
+    if (!get('l', HINT_KEY)) {
       call('GET', ABOUT + '?fields=' + encodeURIComponent('user(emailAddress)')).then(function (r) {
         var em = r.ok && r.body && r.body.user && r.body.user.emailAddress;
-        if (em) { put('s', HINT_KEY, em); drawStatus(); log('取得帳號提示', true, r.ms); }
+        if (em) { put('l', HINT_KEY, em); drawStatus(); log('取得帳號提示', true, r.ms); }
         else log('取得帳號提示', false, r.ms, 'HTTP ' + r.status + ' ' + r.msg);
       });
     }
@@ -179,7 +183,7 @@
   function gisRequest(prompt, label) {
     if (!gisClient) { log(label, false, null, 'Google 登入元件還沒載入'); return; }
     gisPending = { t0: performance.now(), label: label };
-    var hint = prompt === 'none' ? get('s', HINT_KEY) : null;
+    var hint = prompt === 'none' ? get('l', HINT_KEY) : null;
     log(label, null, null, '已按下，等 Google 回應…' + (hint ? '（帶帳號提示）' : ''));
     var o = { prompt: prompt };
     if (hint) o.login_hint = hint;
@@ -189,8 +193,8 @@
   // ── (b) 整頁轉址 ──
   function redirectLogin(prompt, label) {
     var state = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    put('s', REDIR_KEY, JSON.stringify({ state: state, label: label, at: Date.now() }));
-    var hint = prompt === 'none' ? get('s', HINT_KEY) : null;
+    put('l', REDIR_KEY, JSON.stringify({ state: state, label: label, at: Date.now(), win: WIN }));
+    var hint = prompt === 'none' ? get('l', HINT_KEY) : null;
     log(label, null, null, '轉去 Google…' + (hint ? '（帶帳號提示）' : ''));
     location.href = buildAuthUrl({ clientId: CLIENT_ID, redirectUri: redirectUriOf(location), state: state, prompt: prompt, loginHint: hint });
   }
@@ -199,11 +203,12 @@
     if (!f) return;
     // 先把網址的 # 清掉：通行證 ⛔ 不留在網址列與瀏覽紀錄
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
-    var pend = null; try { pend = JSON.parse(get('s', REDIR_KEY) || 'null'); } catch (e) { pend = null; }
-    put('s', REDIR_KEY, null);
+    var pend = null; try { pend = JSON.parse(get('l', REDIR_KEY) || 'null'); } catch (e) { pend = null; }
+    put('l', REDIR_KEY, null);
     var label = pend ? pend.label : '轉址登入';
     var ms = pend ? Date.now() - pend.at : null;
-    if (!pend || pend.state !== f.state) { log(label, false, ms, 'state 對不上，不收這張通行證'); return; }
+    if (pend && pend.win && pend.win !== WIN) log('轉址回來換了視窗', null, null, '出發 窗' + pend.win + ' → 回來 窗' + WIN + '（' + envText() + '）');
+    if (!pend || pend.state !== f.state) { log(label, false, ms, 'state 對不上，不收這張通行證' + (pend ? '' : '（找不到出發時存的暗號）')); return; }
     if (f.error) { log(label, false, ms, 'Google 回錯誤：' + f.error); return; }
     setToken(f.token, f.expiresIn, '轉址');
     log(label, true, ms, 'Google 給的有效秒數 ' + f.expiresIn + '（秒數含在 Google 畫面停留的時間）');
@@ -263,9 +268,12 @@
         function (e) { log('撤銷授權', false, Math.round(performance.now() - t0), '連不上（' + (e && e.message || e) + '）'); });
   }
 
-  function env() {
+  function envText() {
     var standalone = (root.matchMedia && root.matchMedia('(display-mode: standalone)').matches) || root.navigator.standalone === true;
-    $('env').textContent = (standalone ? '主畫面版（全螢幕）' : '瀏覽器分頁') + '｜' + (navigator.onLine ? '有網路' : '沒網路') + '｜' + navigator.userAgent;
+    return standalone ? '主畫面版（全螢幕）' : '瀏覽器分頁';
+  }
+  function env() {
+    $('env').textContent = envText() + '｜窗' + WIN + '｜' + (navigator.onLine ? '有網路' : '沒網路') + '｜' + navigator.userAgent;
   }
 
   function wire(id, fn) { $(id).addEventListener('click', fn); }
@@ -282,7 +290,7 @@
     wire('rdSilent', function () { redirectLogin('none', '轉址不動手重拿（prompt=none）'); });
     wire('create', createSheet); wire('write', writeRow); wire('read', readBack); wire('find', findSheet);
     wire('forget', forget); wire('revoke', revoke);
-    wire('clear', function () { put('s', LOG_KEY, null); drawLog(); });
+    wire('clear', function () { put('l', LOG_KEY, null); put('l', HINT_KEY, null); drawLog(); drawStatus(); });
     root.addEventListener('online', env); root.addEventListener('offline', env);
     setInterval(drawStatus, 10000);
   });
