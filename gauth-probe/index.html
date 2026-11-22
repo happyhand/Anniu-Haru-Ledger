@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#F3F1F6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="記帳試作">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>記帳試作（可刪）</title>
+<style>
+:root { --bg:#F3F1F6; --fg:#2A2733; --card:#fff; --line:#DDD8E4; --ok:#2E7D4F; --bad:#B3261E; --mute:#6B6577; }
+@media (prefers-color-scheme: dark) { :root { --bg:#1B1C2B; --fg:#ECEAF2; --card:#26283A; --line:#3A3D55; --ok:#7FD39B; --bad:#FF8A80; --mute:#A6A1B3; } }
+* { box-sizing: border-box; }
+body { margin:0; padding:16px; padding-top:max(16px, env(safe-area-inset-top)); background:var(--bg); color:var(--fg); font:15px/1.6 system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif; }
+h1 { font-size:18px; margin:0 0 4px; }
+p.note { color:var(--mute); margin:0 0 12px; font-size:13px; }
+section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px; }
+h2 { font-size:15px; margin:0 0 8px; }
+.row { display:flex; flex-wrap:wrap; gap:8px; }
+button { font:inherit; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--fg); min-height:44px; }
+button:active { opacity:.7; }
+dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:2px 10px; font-size:14px; }
+dt { color:var(--mute); } dd { margin:0; word-break:break-all; }
+ul#log { list-style:none; margin:0; padding:0; font:13px/1.5 ui-monospace,Menlo,Consolas,monospace; }
+ul#log li { padding:4px 0; border-bottom:1px dashed var(--line); word-break:break-all; }
+li.ok { color:var(--ok); } li.bad { color:var(--bad); } li.info { color:var(--mute); }
+</style>
+<script src="config.js"></script>
+<script src="probe.js"></script>
+</head>
+<body>
+<h1>記帳試作（可刪）</h1>
+<p class="note">試 Google 登入能不能取代 Apps Script 網址＋密碼。這頁不是記帳網頁、不會碰到你的帳。通行證不會顯示在畫面上，可以放心截圖。</p>
+
+<section>
+  <h2>現在狀態</h2>
+  <dl>
+    <dt>環境</dt><dd id="env">…</dd>
+    <dt>登入元件</dt><dd id="gisState">載入中…</dd>
+    <dt>通行證</dt><dd id="tok">…</dd>
+    <dt>試算表</dt><dd id="sheet">…</dd>
+    <dt>帳號提示</dt><dd id="hint">…</dd>
+    <dt>轉回網址</dt><dd id="redirectUri">…</dd>
+  </dl>
+</section>
+
+<section>
+  <h2>(a) 用 Google 登入元件（彈出視窗）</h2>
+  <div class="row">
+    <button id="gisLogin">登入</button>
+    <button id="gisPick">重選帳號登入</button>
+    <button id="gisSilent">不動手重拿通行證</button>
+  </div>
+</section>
+
+<section>
+  <h2>(b) 整頁轉到 Google 再回來</h2>
+  <div class="row">
+    <button id="rdLogin">登入</button>
+    <button id="rdSilent">不動手重拿通行證</button>
+  </div>
+</section>
+
+<section>
+  <h2>試算表（只用這個試作自己建的那份）</h2>
+  <div class="row">
+    <button id="create">建試算表</button>
+    <button id="write">寫一列</button>
+    <button id="read">讀回</button>
+    <button id="find">找回試算表</button>
+  </div>
+</section>
+
+<section>
+  <h2>其他</h2>
+  <div class="row">
+    <button id="forget">丟掉通行證（模擬過期）</button>
+    <button id="revoke">撤銷授權</button>
+    <button id="clear">清除下面的記錄</button>
+  </div>
+</section>
+
+<section>
+  <h2>記錄（新的在上面）</h2>
+  <ul id="log"></ul>
+</section>
+</body>
+</html>
