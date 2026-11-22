@@ -1,0 +1,1368 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>安妞哈嚕記帳 ♡</title>
+<!-- 加到主畫面（段 F）：路徑一律相對（./），之後放在 GitHub Pages 的子路徑或包成 APP 都不用改 -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F3F1F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1B1C2B" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="記帳 ♡">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- 字型沿用原型（Google Fonts）；讀不到時（含離線）退回系統字型，畫面照常。使用者 2026-11-22 拍板維持、不改自帶 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: soft pastel picture-book yard on the left, a rounded ledger card on the right; stacks on phones. */
+:root{
+  --bg:#F3F1F6; --panel:#FFFFFF; --ink:#4A3F45; --muted:#8A7F86; --line:#E7E1EA;
+  --accent:#EE9273; --accent-ink:#FFFFFF; --chip:#F7F3F8;
+  --sky-top:#CDE8F6; --sky-bot:#FBF4EA; --hill:#CBE8B4; --hill2:#DDF0C8;
+  --grass-a:#BFE3A0; --grass-b:#ADD78E;
+  --night:0;
+  --font-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-body:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-num:"Huninn",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1B1C2B; --panel:#252639; --ink:#ECE6F0; --muted:#A9A2B6; --line:#363851;
+    --accent:#F2A285; --accent-ink:#2A1A16; --chip:#2E3047;
+    --sky-top:#232A52; --sky-bot:#3E3D63; --hill:#3D5A4A; --hill2:#4A6A55;
+    --grass-a:#4D7356; --grass-b:#43674C;
+    --night:1; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1B1C2B; --panel:#252639; --ink:#ECE6F0; --muted:#A9A2B6; --line:#363851;
+  --accent:#F2A285; --accent-ink:#2A1A16; --chip:#2E3047;
+  --sky-top:#232A52; --sky-bot:#3E3D63; --hill:#3D5A4A; --hill2:#4A6A55;
+  --grass-a:#4D7356; --grass-b:#43674C;
+  --night:1; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:22px 40px;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
+h1{font-family:var(--font-display);font-size:2.1rem;line-height:1.2;margin:0;letter-spacing:.04em;text-wrap:balance}
+.tag{font-size:.8rem;color:var(--muted);background:var(--panel);border-radius:999px;padding:3px 12px;white-space:nowrap}
+.lede{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.stage{min-width:0;border-radius:26px;overflow:hidden;background:var(--sky-bot);box-shadow:0 6px 24px rgba(120,90,130,.12)}
+canvas{display:block;width:100%;cursor:pointer;touch-action:manipulation}
+.stage-foot{display:flex;flex-wrap:wrap;gap:6px 18px;padding:12px 18px;background:var(--panel);font-size:.85rem;color:var(--muted)}
+.stage-foot b{color:var(--ink);font-weight:600}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+/* 段 F: anniu's dot is her black coat (#3A3236) and vanished on the dark panel; a light ring keeps it visible */
+:root[data-theme="dark"] .dot{box-shadow:0 0 0 1.5px #CFC8D8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dot{box-shadow:0 0 0 1.5px #CFC8D8}}
+.panel{min-width:0;background:var(--panel);border-radius:26px;padding:20px;display:flex;flex-direction:column;gap:18px;box-shadow:0 6px 24px rgba(120,90,130,.10)}
+.panel h2{font-family:var(--font-display);font-size:1.2rem;margin:0}
+form{display:flex;flex-direction:column;gap:12px}
+.lbl{display:block;font-size:.8rem;color:var(--muted);letter-spacing:.04em;margin-bottom:4px}
+.amt{display:flex;align-items:center;gap:8px;border-radius:18px;padding:6px 16px;background:var(--chip);border:2px solid transparent}
+.amt:focus-within{border-color:var(--accent)}
+.amt span{color:var(--muted)}
+.amt input{border:0;outline:0;background:transparent;color:var(--ink);font-family:var(--font-num);font-size:1.7rem;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.opts{display:grid;gap:6px}
+.opts.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opts.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.opts input{position:absolute;opacity:0;pointer-events:none}
+.opts label{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:16px;background:var(--chip);border:2px solid transparent;cursor:pointer;font-size:.92rem;line-height:1.3;text-align:center}
+.opts label small{font-size:.72rem;color:var(--muted)}
+.opts input:checked + label{border-color:var(--accent);background:var(--panel)}
+.opts input:focus-visible + label{outline:2px solid var(--accent);outline-offset:2px}
+input.note{width:100%;border:2px solid transparent;border-radius:16px;padding:9px 14px;background:var(--chip);color:var(--ink);font:inherit}
+input.note:focus{outline:none;border-color:var(--accent)}
+button{font:inherit;cursor:pointer}
+.go{background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:11px;font-size:1.02rem;letter-spacing:.04em}
+.go:focus-visible,.ghost:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.status{min-height:1.4em;margin:0;font-size:.88rem;color:var(--muted)}
+.sum{display:flex;justify-content:space-between;align-items:baseline;border-top:2px dashed var(--line);padding-top:14px}
+.sum b{font-family:var(--font-num);font-size:1.5rem;font-weight:400;font-variant-numeric:tabular-nums}
+ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto}
+ul.list li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:14px}
+/* the card that pops up over a tapped decoration */
+.stage{position:relative}
+.pop{position:absolute;z-index:2;width:max-content;max-width:min(260px,calc(100% - 16px));background:var(--panel);color:var(--ink);border-radius:16px;padding:10px 12px;box-shadow:0 6px 20px rgba(60,40,70,.22);font-size:.88rem}
+.pop[hidden]{display:none}
+.pop p{margin:0 0 8px}
+.pop .row{display:flex;gap:6px;justify-content:flex-end}
+.pop .yes{background:var(--accent);color:var(--accent-ink)}
+.d{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.n small{color:var(--muted);margin-left:6px}
+.v{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.ghost{background:var(--chip);border:0;color:var(--muted);border-radius:999px;padding:6px 14px;font-size:.85rem;align-self:flex-start}
+.ghost.warn{background:#C0392B;color:#FFFFFF}
+.note-box{font-size:.82rem;color:var(--muted);background:var(--chip);border-radius:14px;padding:10px 12px;margin:0}
+/* ---- product additions (段 C): date field, month switcher, tappable list, edit / trash dialogs ---- */
+body{margin:0}
+input.note[type=date]{min-height:2.6em}
+.month{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:2px dashed var(--line);padding-top:14px}
+.month b{font-family:var(--font-display);font-weight:400;font-size:1.05rem;white-space:nowrap;text-align:center}
+.month b small{display:block;font-size:.72rem;color:var(--muted);line-height:1.2}
+.month .ghost{align-self:center;padding:4px 12px;white-space:nowrap}
+.month .ghost[disabled]{opacity:.35;cursor:default}
+.sum{border-top:0;padding-top:0}
+ul.list li{display:block;padding:0}
+ul.list button.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:8px 10px;border:0;border-radius:14px;background:transparent;color:inherit;text-align:left;font:inherit}
+ul.list button.item:hover,ul.list button.item:focus-visible{background:var(--chip);outline:none}
+ul.list .empty{padding:8px 10px;color:var(--muted);font-size:.88rem}
+.row-end{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
+.warnbox{font-size:.85rem;background:#FCE8E4;color:#8A2B1D;border-radius:14px;padding:10px 12px;margin:0}
+dialog{border:0;border-radius:22px;padding:20px;width:min(400px,calc(100vw - 32px));background:var(--panel);color:var(--ink);box-shadow:0 10px 40px rgba(40,30,50,.35)}
+dialog::backdrop{background:rgba(30,25,40,.45)}
+dialog h2{font-family:var(--font-display);font-size:1.2rem;margin:0 0 4px}
+dialog form{gap:12px}
+dialog .meta{font-size:.82rem;color:var(--muted);margin:0}
+dialog .acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center}
+dialog .acts .ghost{align-self:auto}
+dialog .acts .spacer{flex:1}
+dialog .go{padding:9px 20px}
+dialog ul.list{max-height:50vh}
+.budget{display:flex;flex-direction:column;gap:6px}
+.bar{height:12px;border-radius:999px;background:var(--chip);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:#9CCB8A;transition:width .4s}
+.bar.worried i{background:#F2B45A}
+.bar.sad i{background:#E0705A}
+.budget .row-end small{color:var(--muted)}
+.budget .ghost{padding:3px 12px;font-size:.8rem}
+dialog ul.list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px}
+/* ---- 段 E: settings dialog (budget, Google Sheet link, sync) and the sync status line ---- */
+header .ghost{align-self:center}
+dialog{max-height:calc(100dvh - 32px);overflow:auto}
+dialog section.set{border-top:2px dashed var(--line);padding-top:12px;margin-top:12px;display:flex;flex-direction:column;gap:8px}
+dialog h3{font-size:.95rem;margin:0}
+form.inline{flex-direction:row;align-items:center;gap:8px}
+form.inline .amt{flex:1;min-width:0}
+form.inline .amt input{font-size:1.3rem}
+.sync{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);background:var(--chip);border-radius:14px;padding:8px 12px}
+.sync small{flex:1;min-width:0;font-size:inherit}
+.lamp{display:inline-block;width:9px;height:9px;border-radius:50%;background:#B8B0BE;flex:none}
+[data-level="ok"] .lamp{background:#7DBB6A}
+[data-level="wait"] .lamp,[data-level="busy"] .lamp{background:#F2B45A}
+[data-level="bad"] .lamp{background:#E0705A}
+.sync .ghost{padding:3px 12px;font-size:.8rem;align-self:center;white-space:nowrap}
+.sync-line{display:flex;align-items:center;gap:8px;margin:0;font-size:.88rem}
+.issues{margin:0;padding-left:1.2em;font-size:.8rem;color:#C0392B}
+:root[data-theme="dark"] .issues{color:#F09A8A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .issues{color:#F09A8A}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>安妞哈嚕記帳 ♡</h1>
+    <button class="ghost" id="openSettings" type="button">設定</button>
+  </header>
+  <p class="lede">記一筆帳，就幫安妞或哈嚕的狗屋多掛一個裝飾；院子只掛這個月的帳，下個月重新長。花得越多，裝飾越大；一筆 NT$1,000 以上會閃閃發亮。點院子裡的裝飾可以把它收起來，點清單的一筆可以改帳、刪帳。</p>
+  <p class="warnbox" id="problems" hidden></p>
+
+  <div class="grid">
+    <div class="stage">
+      <canvas id="yard" aria-label="院子：兩間狗屋，這個月的每筆帳是一個裝飾"></canvas>
+      <div class="pop" id="pop" role="dialog" aria-label="這個裝飾" hidden></div>
+      <div class="stage-foot">
+        <span><i class="dot" style="background:#3A3236"></i>安妞的狗屋 <b id="cA">0</b> 個裝飾</span>
+        <span><i class="dot" style="background:#EBA868"></i>哈嚕的狗屋 <b id="cH">0</b> 個裝飾</span>
+        <button class="ghost" id="theme" type="button"></button>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <form id="f" novalidate>
+        <h2>記一筆</h2>
+        <div>
+          <label class="lbl" for="amt">金額</label>
+          <div class="amt"><span>NT$</span><input id="amt" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+        </div>
+        <div>
+          <label class="lbl" for="note">花在什麼</label>
+          <input class="note" id="note" maxlength="200" placeholder="例如：午餐拉麵（選填）" autocomplete="off">
+        </div>
+        <div>
+          <label class="lbl" for="date">日期</label>
+          <input class="note" id="date" type="date" required>
+        </div>
+        <div>
+          <span class="lbl">選一個裝飾</span>
+          <div class="opts c2" id="decos"></div>
+        </div>
+        <div>
+          <span class="lbl">裝飾誰的狗屋</span>
+          <div class="opts c2" id="houses"></div>
+        </div>
+        <button class="go" type="submit">記一筆，掛裝飾</button>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="month">
+        <button class="ghost" id="prevMonth" type="button" aria-label="上個月">‹ 上月</button>
+        <b id="monthLabel"></b>
+        <button class="ghost" id="nextMonth" type="button" aria-label="下個月">下月 ›</button>
+      </div>
+      <div class="sum"><span><span id="sumLabel">合計</span> <small id="cnt" style="color:var(--muted)"></small></span><b id="total"></b></div>
+      <div class="budget" id="budget">
+        <div class="bar" id="bar" hidden><i id="barFill"></i></div>
+        <div class="row-end"><small id="budgetText"></small><button class="ghost" id="openBudget" type="button">設定預算</button></div>
+      </div>
+      <ul class="list" id="list"></ul>
+      <div class="row-end">
+        <button class="ghost" id="openTrash" type="button">垃圾桶</button>
+        <small style="color:var(--muted)" id="saveNote"></small>
+      </div>
+      <div class="sync" id="syncRow" data-level="off"><i class="lamp"></i><small id="syncText" role="status" aria-live="polite"></small><button class="ghost" id="syncBtn" type="button">現在同步</button></div>
+    </aside>
+  </div>
+</div>
+
+<dialog id="editDlg" aria-labelledby="editTitle">
+  <form id="editForm" method="dialog" novalidate>
+    <h2 id="editTitle">改這筆帳</h2>
+    <p class="meta" id="editMeta"></p>
+    <div>
+      <label class="lbl" for="eAmt">金額</label>
+      <div class="amt"><span>NT$</span><input id="eAmt" inputmode="numeric" autocomplete="off"></div>
+    </div>
+    <div>
+      <label class="lbl" for="eNote">花在什麼</label>
+      <input class="note" id="eNote" maxlength="200" placeholder="（選填）" autocomplete="off">
+    </div>
+    <div>
+      <label class="lbl" for="eDate">日期</label>
+      <input class="note" id="eDate" type="date" required>
+    </div>
+    <div class="row-end" id="hangRow">
+      <span class="meta" id="hangText"></span>
+      <button class="ghost" id="hangBtn" type="button"></button>
+    </div>
+    <p class="status" id="editStatus" role="status" aria-live="polite"></p>
+    <div class="acts">
+      <button class="ghost warn" id="delBtn" type="button">刪除（丟進垃圾桶）</button>
+      <span class="spacer"></span>
+      <button class="ghost" id="cancelBtn" type="button">取消</button>
+      <button class="go" id="saveBtn" type="submit">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="setDlg" aria-labelledby="setTitle">
+  <h2 id="setTitle">設定</h2>
+  <section class="set">
+    <h3>每月預算</h3>
+    <p class="meta">本月花到預算的 80%，兩隻會開始擔心；超過預算會垂頭喪氣。留空白＝不設，只顯示合計。</p>
+    <form id="budgetForm" class="inline" novalidate>
+      <div class="amt"><span>NT$</span><input id="bAmt" inputmode="numeric" autocomplete="off" placeholder="不設" aria-label="每月預算"></div>
+      <button class="go" type="submit">存預算</button>
+    </form>
+    <p class="status" id="budgetStatus" role="status" aria-live="polite"></p>
+  </section>
+  <section class="set">
+    <h3>Google 試算表</h3>
+    <p class="meta">貼上自己部署的 Apps Script 網址（/exec 結尾）和密碼。網址和密碼只存在這台手機；這兩樣就是帳本的鑰匙，不要給別人。</p>
+    <form id="linkForm" novalidate>
+      <div>
+        <label class="lbl" for="lUrl">Apps Script 網址</label>
+        <input class="note" id="lUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/…/exec">
+      </div>
+      <div>
+        <label class="lbl" for="lToken">密碼</label>
+        <input class="note" id="lToken" type="password" autocomplete="off">
+      </div>
+      <div class="acts">
+        <button class="ghost" id="unlink" type="button">中斷連線</button>
+        <span class="spacer"></span>
+        <button class="ghost" id="testLink" type="button">測試連線</button>
+        <button class="go" type="submit">儲存</button>
+      </div>
+    </form>
+    <p class="status" id="linkStatus" role="status" aria-live="polite"></p>
+  </section>
+  <section class="set">
+    <h3>同步</h3>
+    <p class="sync-line" id="setSyncRow" data-level="off"><i class="lamp"></i><span id="setSyncText"></span></p>
+    <ul class="issues" id="syncIssues" hidden></ul>
+    <div class="acts"><button class="ghost" id="setSyncBtn" type="button">現在同步</button></div>
+  </section>
+  <div class="acts" style="margin-top:12px"><button class="ghost" id="closeSet" type="button">關閉</button></div>
+</dialog>
+
+<dialog id="trashDlg" aria-labelledby="trashTitle">
+  <h2 id="trashTitle">垃圾桶</h2>
+  <p class="meta">刪掉的帳都在這裡，可以還原；不會自己消失。</p>
+  <ul class="list" id="trashList"></ul>
+  <p class="status" id="trashStatus" role="status" aria-live="polite"></p>
+  <div class="acts"><button class="ghost" id="closeTrash" type="button">關閉</button></div>
+</dialog>
+
+<script src="lib/core.js"></script>
+<script src="store.js"></script>
+<script>
+(function(){
+/* a remembered day/night choice wins over the system setting; set it before the palette is first read */
+const THEME_KEY = 'anniu-haru-ledger-theme';
+try { const t = localStorage.getItem(THEME_KEY); if (t==='light' || t==='dark') document.documentElement.dataset.theme = t; } catch(e){}
+/* the person picks the decoration directly — there are no spending categories (decided 2026-10-14) */
+const DECOS = [
+  {id:'sprout',  label:'芽芽',   where:'地上', zone:'ground'},
+  {id:'toy',     label:'玩具',   where:'地上', zone:'ground'},
+  {id:'balloon', label:'氣球',   where:'天空', zone:'sky'},
+  {id:'cloud',   label:'雲朵',   where:'高空', zone:'high', night:'星星'},   // turns into a star in dark mode
+];
+/* seasons as felt in Taiwan: spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb.
+   The season dresses the whole scene, not the decorations (decided 2026-10-17). ?season=0..3 in the address previews another one */
+const FORCED_SEASON = (() => { const s = new URLSearchParams(location.search).get('season'); return /^[0-3]$/.test(s||'') ? +s : null; })();
+const seasonNow = () => { if (FORCED_SEASON !== null) return FORCED_SEASON; const m = new Date().getMonth() + 1; return m>=3 && m<=5 ? 0 : m>=6 && m<=8 ? 1 : m>=9 && m<=11 ? 2 : 3; };
+const decoById = Object.fromEntries(DECOS.map(d => [d.id, d]));
+const decoLabel = id => { const d = decoById[id]; return night && d.night || d.label; };
+const HOUSES = {
+  anniu:{name:'安妞', wall:'#A88472', wall2:'#987363', roof:'#8E9BD0', roof2:'#7C89BF', side:-1},
+  haru: {name:'哈嚕', wall:'#F3D2A6', wall2:'#E8C292', roof:'#F5A98A', roof2:'#EB977A', side:1},
+};
+/* spot positions per zone; how many there are per zone must match LDG_SLOTS in shared/ledger.js (which picks the spot) */
+const SLOTS = {
+  /* × hw, + towards the outer edge, − towards the middle (the bowl's side), mirrored per house. The inner spot next to the
+     bowl at (−0.5, .24) sat right in front of it (2026-10-18); it moved to the front row, centred on the door */
+  ground:[[0.5,.24],[0,.8],[0.36,.52],[-0.36,.52],[0.72,.24],[-0.72,.24],[0.42,.8],[-0.42,.8],[0.62,.52],[-0.62,.52],[0.7,.8],[-0.7,.8]],
+  sky:[[0.64,0.12],[0.82,0.36],[0.66,-0.14],[0.86,0.08],[0.22,-0.24],[0.44,-0.32]],
+  high:[[0.62,0.1],[0.12,0.12],[0.86,0.36],[0.36,0.08],[0.28,0.3],[0.76,0.2]],   // across this house's half of the sky (0 just inside the tree … 1 middle) × fraction of the sky height; kept above the roof
+};
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+for (const z in SLOTS) if (SLOTS[z].length !== LDG_SLOTS[z]) console.error('SLOTS.' + z + ' has ' + SLOTS[z].length + ' spots but LDG_SLOTS says ' + LDG_SLOTS[z]);
+
+/* ---------- data ----------
+   Every read and write of the books goes through LedgerStore (store.js); which entries hang where is decided by
+   ldgPlanYard (shared/ledger.js): this month's entries only (phone's local time), each keeps its spot (e.slot),
+   a taken-down one (e.hidden) stays in the books. Here we only keep the result for drawing. */
+let selected = null, placed = [], yardMonth = '';
+const bornAt = {};   // id -> performance.now() when it was just added, for the pop-in animation
+function layout(){
+  yardMonth = ldgMonthOf(LedgerStore.today());
+  placed = ldgPlanYard(LedgerStore.records(), yardMonth).placed.map(p => ({e:p.rec, zone:p.zone, slot:p.slot}));
+}
+layout();
+
+/* ---------- canvas ---------- */
+const cv = document.getElementById('yard'), ctx = cv.getContext('2d');
+let W=0, H=0, dpr=1, groundY=0, band=0, hw=0, wh=0, rh=0, baseY=0, hx={};
+function resize(){
+  W = cv.parentElement.clientWidth;
+  H = Math.round(Math.max(390, Math.min(610, W*0.68)));
+  groundY = H*0.58; band = H - groundY;
+  hw = Math.min(W*0.3, 236); wh = hw*0.6; rh = hw*0.5;
+  baseY = groundY + band*0.1;
+  hx = {anniu: W*0.26, haru: W*0.74};
+  /* capped at 2: phones report 3, which is 2.25× the pixels of 2 for a difference nobody sees on a picture-book scene,
+     and the whole yard is repainted every frame (使用者 2026-11-20: the phone stuttered) */
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); cv.style.height = H+'px';
+}
+new ResizeObserver(resize).observe(cv.parentElement);
+resize();
+
+function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+let night = false, onTheme = () => {}; const PAL = {};   // onTheme: the panel relabels clouds ⇄ stars
+function readPalette(){ night = css('--night')==='1'; for (const k of ['sky-top','sky-bot','hill','hill2','grass-a','grass-b','ink']) PAL[k] = css('--'+k); onTheme(); }
+readPalette();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readPalette);
+new MutationObserver(readPalette).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+function hex2rgb(h){ h=h.replace('#',''); const n=parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; }
+function mix(a,b,t){ const A=hex2rgb(a), B=hex2rgb(b); return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')'; }
+const col = h => night ? mix(h, '#2B3466', 0.36) : h;
+/* night darkens the illustrations. Setting ctx.filter on every drawImage is slow (each call goes through an extra render pass):
+   with dozens of petals or leaves per frame, spring and autumn nights stuttered (2026-10-18). Darken each sheet once and reuse it */
+const dimCache = new Map();
+function dim(img, filter='brightness(0.8) saturate(0.9)'){
+  if (!night) return img;
+  let m = dimCache.get(img); if (!m) dimCache.set(img, m = {});
+  if (!m[filter]){ const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const g = c.getContext('2d'); g.filter = filter; g.drawImage(img, 0, 0); m[filter] = c; }
+  return m[filter];
+}
+const FONT = () => getComputedStyle(document.body).fontFamily;
+
+/* soft outline shared by every shape gives the picture-book look */
+const lw = () => Math.max(1.3, hw*0.011);
+function ink(){ ctx.lineJoin='round'; ctx.lineCap='round'; ctx.lineWidth = lw(); ctx.strokeStyle = night ? 'rgba(20,18,40,.55)' : 'rgba(110,80,85,.45)'; ctx.stroke(); }
+function rpath(pts, r){
+  ctx.beginPath();
+  const n = pts.length, mid = (a,b) => [(a[0]+b[0])/2,(a[1]+b[1])/2];
+  const s = mid(pts[n-1], pts[0]); ctx.moveTo(s[0], s[1]);
+  for (let i=0;i<n;i++){ const p = pts[i], q = pts[(i+1)%n]; ctx.arcTo(p[0],p[1],q[0],q[1], r); }
+  ctx.closePath();
+}
+function shape(pts, fill, r, outline=true){ rpath(pts, r ?? hw*0.02); ctx.fillStyle = fill; ctx.fill(); if (outline) ink(); }
+function blob(x,y,rx,ry,fill,outline=true,rot=0){ ctx.beginPath(); ctx.ellipse(x,y,rx,ry,rot,0,Math.PI*2); ctx.fillStyle=fill; ctx.fill(); if (outline) ink(); }
+function rrect(x,y,w,h,r,fill,outline=true){ ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x,y,w,h,r) : ctx.rect(x,y,w,h); ctx.fillStyle=fill; ctx.fill(); if (outline) ink(); }
+function shadow(x,y,rx,ry){ ctx.globalAlpha = night ? 0.25 : 0.12; blob(x,y,rx,ry,'#5A3F55',false); ctx.globalAlpha = 1; }
+
+/* ---------- house ---------- */
+/* illustrated houses (houses.png: 2 frames, anniu then haru, names painted on the plaques).
+   Landmarks are pixel positions inside one frame; the wall width maps to hw, the bottom edge sits on baseY. */
+const ART = {cw:567, ch:480, cx:284, bottom:476, wallL:55, wallR:515, apex:[284,6], roofL:[30,205], roofR:[538,205],
+  eaveY:262, door:[284,410], win:[285,112,50]};
+const houseImg = new Image(); houseImg.onload = () => { houseImg.ok = true; }; houseImg.src = 'img/houses.png';
+/* winter houses (houses-winter.png, Gemini repaint with snow on the roofs, decided 2026-10-18 over the drawn snow cap).
+   The snow makes the picture taller, so cut.js shrank it: each house is lined up by its own wall instead (measured at 140 px
+   above the bottom, the same row that gives ART.wallL/wallR), so it lands at the same size and spot as in the other seasons */
+const winterHouseImg = new Image(); winterHouseImg.onload = () => { winterHouseImg.ok = true; }; winterHouseImg.src = 'img/houses-winter.png';
+const ART_WINTER = {cw:556, ch:480, bottom:477, wall:[[56,500],[59,504]]};   // per frame: anniu, haru
+const artK = () => hw / (ART.wallR - ART.wallL);
+const artPt = (house, ax, ay) => [hx[house] + (ax - ART.cx)*artK(), baseY + (ay - ART.bottom)*artK()];
+function roofPts(house){
+  if (houseImg.ok) return {L:artPt(house, ...ART.roofL), A:artPt(house, ...ART.apex), R:artPt(house, ...ART.roofR)};
+  const cx = hx[house], top = baseY - wh;
+  return {L:[cx - hw*0.66, top + hw*0.05], A:[cx, top - rh], R:[cx + hw*0.66, top + hw*0.05]};
+}
+const eaveY = house => houseImg.ok ? artPt(house, 0, ART.eaveY)[1] : baseY - wh + hw*0.07;
+function drawHouse(house){
+  const h = HOUSES[house], cx = hx[house], top = baseY - wh, x0 = cx - hw/2;
+  shadow(cx, baseY, hw*0.66, band*0.07);
+  if (houseImg.ok){
+    const k = artK(), fi = house==='anniu' ? 0 : 1;
+    if (seasonNow()===3 && winterHouseImg.ok){
+      const A = ART_WINTER, [l, r] = A.wall[fi], kw = hw/(r - l), ox = (l + r)/2;
+      ctx.drawImage(dim(winterHouseImg), fi*A.cw, 0, A.cw, A.ch, cx - ox*kw, baseY - A.bottom*kw, A.cw*kw, A.ch*kw);
+    } else ctx.drawImage(dim(houseImg), fi*ART.cw, 0, ART.cw, ART.ch, cx - ART.cx*k, baseY - ART.bottom*k, ART.cw*k, ART.ch*k);
+    if (night){   // warm light in the doorway and the round window
+      const [doorX, doorY] = artPt(house, ...ART.door), [winX, winY] = artPt(house, ART.win[0], ART.win[1]);
+      ctx.globalAlpha = 0.22; blob(doorX, doorY + 20*k, 46*k, 36*k, '#FFC98A', false);
+      ctx.globalAlpha = 0.3; blob(winX, winY, ART.win[2]*k*1.2, ART.win[2]*k*1.2, '#FFE3A3', false); ctx.globalAlpha = 1;
+    }
+    return;
+  }
+  rrect(x0, top, hw, wh, hw*0.08, col(h.wall));
+  ctx.fillStyle = col(h.wall2);
+  for (let i=1;i<4;i++) rrect(x0+hw*0.06, top + wh*i/4 - hw*0.006, hw*0.88, hw*0.012, hw*0.006, col(h.wall2), false);
+  // door
+  const dw = hw*0.38, dh = wh*0.66, dx = cx - dw/2, dy = baseY - dh;
+  ctx.beginPath(); ctx.moveTo(dx, baseY); ctx.lineTo(dx, dy + dw/2); ctx.arc(cx, dy + dw/2, dw/2, Math.PI, 0); ctx.lineTo(dx+dw, baseY); ctx.closePath();
+  ctx.fillStyle = night ? '#4A3A4A' : '#5E4650'; ctx.fill(); ink();
+  if (night){ ctx.globalAlpha = 0.4; blob(cx, baseY - dh*0.32, dw*0.36, dw*0.3, '#FFC98A', false); ctx.globalAlpha = 1; }
+  // roof: rounded triangle with a soft scallop trim
+  const r = roofPts(house);
+  shape([r.L, r.A, r.R], col(h.roof), hw*0.08);
+  const trim = 7;
+  for (let i=0;i<trim;i++){
+    const t = (i+0.5)/trim, x = r.L[0] + (r.R[0]-r.L[0])*t;
+    blob(x, r.L[1] - hw*0.005, (r.R[0]-r.L[0])/trim*0.52, hw*0.045, col(h.roof2), false);
+  }
+  // round window in the gable with a tiny heart
+  const wy = top - rh*0.42;
+  blob(cx, wy, hw*0.085, hw*0.085, night ? '#FFE3A3' : '#FFF6EA');
+  heart(cx, wy + hw*0.012, hw*0.045, col('#F29BA7'));
+  // name plaque: bone shape
+  const py = top + wh*0.17, pw = hw*0.36, ph = hw*0.12;
+  for (const sx of [-1,1]) for (const sy of [-1,1]) blob(cx + sx*pw/2, py + sy*ph*0.28, ph*0.34, ph*0.34, col('#FFF7EC'), true);
+  rrect(cx-pw/2, py-ph/2, pw, ph, ph*0.4, col('#FFF7EC'), false);
+  ctx.fillStyle = col('#7A5A60'); ctx.font = `${Math.round(ph*0.7)}px ${FONT()}`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(h.name, cx, py + 1);
+}
+function heart(x,y,s,fill){
+  ctx.beginPath(); ctx.moveTo(x, y + s*0.7);
+  ctx.bezierCurveTo(x - s*1.2, y - s*0.1, x - s*0.6, y - s*0.95, x, y - s*0.35);
+  ctx.bezierCurveTo(x + s*0.6, y - s*0.95, x + s*1.2, y - s*0.1, x, y + s*0.7);
+  ctx.fillStyle = fill; ctx.fill();
+}
+
+/* ---------- decorations ---------- */
+const PASTEL = ['#F7A8A8','#F8D27F','#9CCBEF','#A8DDB0','#CDB1EC','#F8B9D2'];
+const sizeFor = amt => 0.9 + Math.min(0.55, Math.log10(Math.max(amt,1))*0.14);
+function hash(s){ let h=0; for (const c of String(s)) h = (h*31 + c.charCodeAt(0))|0; return Math.abs(h); }   // hoisted: layout() runs before this point
+/* 芽芽 sprites (sprouts.png, 12 frames from tools/merge.js): what grows on the head follows the amount — sprout, bud, then flower */
+const sproutImg = new Image(); sproutImg.onload = () => { sproutImg.ok = true; }; sproutImg.src = 'img/sprouts.png';
+const SPROUT_FRAMES = 12, SPROUT_CELL = 1.488;   // cell height ÷ a typical 芽芽's height, as printed by merge.js
+const SPROUT_TIERS = [[0,3,6,7], [1,4,8,9], [2,5,10,11]];   // sprout, bud, flower — see README for who is who
+/* ids are back-to-back timestamps, so the plain hash barely changes between entries; scramble it before picking */
+function mixHash(s){ let h = hash(s) ^ 0x9E3779B9; h = Math.imul(h ^ (h >>> 16), 0x85EBCA6B); h = Math.imul(h ^ (h >>> 13), 0xC2B2AE35); return (h ^ (h >>> 16)) >>> 0; }
+/* toys (toys.png, 12 frames from tools/merge.js), picked at random — no amount tiers (decided 2026-10-14) */
+const toyImg = new Image(); toyImg.onload = () => { toyImg.ok = true; }; toyImg.src = 'img/toys.png';
+const TOY_FRAMES = 12;
+const toyFrame = e => mixHash(e.id) % TOY_FRAMES;
+/* clouds by day, stars at night (clouds.png / stars.png, 4 faces each, Gemini 2026-10-18), picked at random like the toys */
+const cloudImg = new Image(); cloudImg.onload = () => { cloudImg.ok = true; }; cloudImg.src = 'img/clouds.png';
+const starImg = new Image(); starImg.onload = () => { starImg.ok = true; }; starImg.src = 'img/stars.png';
+const SKY_FRAMES = 4;
+/* balloons (Gemini 2026-10-18): one set per sister, in her roof's colours — round, heart, star, bone, paw, then her own head.
+   6 frames each, picked at random; a set that fails to load falls back to the drawn balloons */
+const balloonImg = {anniu:new Image(), haru:new Image()}, BALLOON_FRAMES = 6;
+for (const k in balloonImg){ const im = balloonImg[k]; im.onload = () => { im.ok = true; }; im.src = `img/balloons-${k}.png`; }
+const sproutFrame = e => { const tier = e.amount >= 1000 ? 2 : e.amount >= 300 ? 1 : 0; return SPROUT_TIERS[tier][mixHash(e.id) % SPROUT_TIERS[tier].length]; };
+
+function decoPos(p){
+  const cx = hx[p.e.house], side = HOUSES[p.e.house].side;
+  if (p.zone==='ground'){ const [ox,oy] = SLOTS.ground[p.slot]; return [cx + side*ox*hw, groundY + band*oy]; }
+  if (p.zone==='high'){
+    // from just inside the tree's crown to the middle: counted from the picture's edge, the outer spots sat on the trees (2026-10-18)
+    const [fx,fy] = SLOTS.high[p.slot], inner = treeReach() + hw*0.12, edge = side < 0 ? inner : W - inner, x = edge + (W/2 - edge)*fx;
+    const r = roofPts(p.e.house), half = (r.R[0] - r.L[0])/2, d = Math.abs(x - r.A[0]);
+    const roofY = d < half ? r.A[1] + (r.L[1] - r.A[1])*d/half : groundY;   // the roof line under this x (or the ground past the eaves)
+    return [x, Math.min(groundY*fy, roofY - hw*0.2)]; }
+  const [ox,oy] = SLOTS.sky[p.slot], r = roofPts(p.e.house);
+  return [cx + side*ox*hw, r.A[1] + oy*hw];
+}
+function sparkle(x,y,r,t){
+  const c = night ? '#FFF0B8' : '#FFD36E';
+  for (let i=0;i<3;i++){
+    const a = t*1.2 + i*2.1, sx = x + Math.cos(a)*r*1.35, sy = y + Math.sin(a)*r*1.15, k = r*(0.22 + 0.08*Math.sin(t*3+i));
+    ctx.beginPath(); ctx.moveTo(sx, sy-k);
+    ctx.quadraticCurveTo(sx, sy, sx+k, sy); ctx.quadraticCurveTo(sx, sy, sx, sy+k);
+    ctx.quadraticCurveTo(sx, sy, sx-k, sy); ctx.quadraticCurveTo(sx, sy, sx, sy-k);
+    ctx.fillStyle = c; ctx.fill();
+  }
+}
+/* phones (段 F, 2026-11-22: "decorations look small at phone width"): everything scales with hw, which shrinks to ~107 px at
+   390 wide while the yard keeps its height, so the ground rows have room to spare sideways and the sky does not.
+   Ground decorations grow up to 15% as hw goes from 236 (desktop) down to 110; balloons and clouds half as much; the lamps 30%.
+   Checked with every spot of both houses taken at the biggest size: at 25% the front-row 芽芽 and bones started touching,
+   at 15% the gaps stay (screenshots in 施工歷程 段 F) */
+const PHONE_GROW = 0.15;
+const phoneK = (share = 1) => 1 + PHONE_GROW*share*Math.max(0, Math.min(1, (236 - hw)/(236 - 110)));
+function drawDeco(p, x, y, g, t){
+  const e = p.e, u = hw*0.11*sizeFor(e.amount)*phoneK(p.zone==='ground' ? 1 : 0.5), c = col(PASTEL[hash(e.id) % PASTEL.length]);
+  ctx.save(); ctx.translate(x,y); ctx.scale(g,g);
+  if (p.zone==='ground' && mixHash(e.id + ':flip') & 1) ctx.scale(-1,1);   // half of them face the other way; fixed per entry so it doesn't flicker
+  let cy = -u*0.5, rad = u;
+  switch (e.deco){
+    case 'cloud': {
+      const bob = reduce ? 0 : Math.sin(t*0.9 + hash(e.id))*u*0.08;
+      ctx.translate(0,bob); ctx.scale(0.8,0.8);   // the sky is small; keep them a notch under the other decorations
+      const img = night ? starImg : cloudImg;
+      if (img.ok){   // Gemini art, one of 4 faces picked at random like the toys
+        if (night){ const tw = reduce ? 1 : 1 + 0.07*Math.sin(t*2.6 + hash(e.id)); ctx.scale(tw,tw);
+          ctx.globalAlpha = 0.14; blob(0,0,u*0.85,u*0.85,'#FFE9A8',false); ctx.globalAlpha = 1; }
+        const cw = img.naturalWidth/SKY_FRAMES, ch = img.naturalHeight, dw = night ? u*1.65 : u*2.1, dh = dw*ch/cw;
+        ctx.drawImage(img, (mixHash(e.id) % SKY_FRAMES)*cw, 0, cw, ch, -dw/2, -dh/2, dw, dh);   // no dim(): stars should glow, clouds only show by day
+        cy = 0; rad = u*0.75; break; }
+      if (night){   // a chubby five-point star that twinkles
+        const tw = reduce ? 1 : 1 + 0.07*Math.sin(t*2.6 + hash(e.id));
+        ctx.scale(tw,tw);
+        ctx.globalAlpha = 0.14; blob(0,0,u*0.8,u*0.8,'#FFE9A8',false); ctx.globalAlpha = 1;
+        const pts = []; for (let i=0;i<10;i++){ const a = -Math.PI/2 + i*Math.PI/5, r = i%2 ? u*0.36 : u*0.78; pts.push([Math.cos(a)*r, Math.sin(a)*r + u*0.04]); }
+        shape(pts, '#FFE08A', u*0.12);
+      } else {      // puffs: stroke them all first, then fill on top so only the outer edge keeps an outline
+        const puffs = [[-u*0.58,u*0.12,u*0.42],[u*0.58,u*0.12,u*0.42],[-u*0.2,-u*0.14,u*0.52],[u*0.26,-u*0.2,u*0.46],[0,u*0.2,u*0.4]];
+        const path = () => { ctx.beginPath(); for (const [px,py,pr] of puffs){ ctx.moveTo(px+pr,py); ctx.arc(px,py,pr,0,Math.PI*2); } };
+        path(); ctx.lineJoin='round'; ctx.lineWidth = lw()*2; ctx.strokeStyle = 'rgba(110,80,85,.45)'; ctx.stroke();
+        path(); ctx.fillStyle = '#FFFFFF'; ctx.fill();   // plain white: tinted clouds looked stained against the blue sky (2026-10-18)
+      }
+      // sleepy little face
+      for (const ex of [-1,1]){ ctx.beginPath(); ctx.arc(ex*u*0.2, u*0.02, u*0.07, Math.PI*0.15, Math.PI*0.85);
+        ctx.lineWidth = Math.max(1, u*0.06); ctx.strokeStyle = '#6A4E55'; ctx.lineCap='round'; ctx.stroke(); }
+      ctx.globalAlpha = 0.5; for (const ex of [-1,1]) blob(ex*u*0.36, u*0.14, u*0.09, u*0.05, '#F58C9E', false); ctx.globalAlpha = 1;
+      cy = 0; rad = u*0.75; break; }
+    case 'sprout': {
+      if (sproutImg.ok){
+        const cw = sproutImg.naturalWidth/SPROUT_FRAMES, ch = sproutImg.naturalHeight, dh = u*1.9*SPROUT_CELL, dw = dh*cw/ch;
+        shadow(0,0,u*0.75,u*0.18);
+        ctx.save(); if (!reduce) ctx.rotate(Math.sin(t*1.8 + hash(e.id))*0.06);   // gentle sway from the feet
+        ctx.drawImage(dim(sproutImg), sproutFrame(e)*cw, 0, cw, ch, -dw/2, -dh, dw, dh);
+        ctx.restore();
+        cy = -u*0.95; rad = u*1.1; break; }   // around the body, not the empty headroom left for the tall frames
+      rrect(-u*0.07,-u*2.1,u*0.14,u*2.1,u*0.07,col('#C7A88C'));
+      ctx.save(); ctx.translate(0,-u*2.1); ctx.rotate(reduce ? 0 : t*1.2 + hash(e.id));
+      for (let i=0;i<4;i++){ ctx.rotate(Math.PI/2); shape([[0,0],[u*0.85,-u*0.2],[u*0.6,u*0.5]], col(PASTEL[(hash(e.id)+i)%PASTEL.length]), u*0.12); }
+      ctx.restore(); blob(0,-u*2.1,u*0.13,u*0.13,col('#FFFFFF'));
+      cy = -u*1.9; rad = u*1.1; break; }
+    case 'toy': {
+      shadow(0,0,u*0.85,u*0.2);
+      if (toyImg.ok){
+        const cw = toyImg.naturalWidth/TOY_FRAMES, ch = toyImg.naturalHeight, dh = u*1.5, dw = dh*cw/ch;
+        ctx.drawImage(dim(toyImg), toyFrame(e)*cw, 0, cw, ch, -dw/2, -dh, dw, dh);
+        cy = -dh*0.4; rad = u*1.0; break; }
+      if (hash(e.id)%2){ blob(0,-u*0.6,u*0.6,u*0.6,c);
+        ctx.save(); ctx.beginPath(); ctx.arc(0,-u*0.6,u*0.6,0,7); ctx.clip(); rrect(-u*0.7,-u*0.72,u*1.4,u*0.22,u*0.1,'rgba(255,255,255,.8)',false); ctx.restore(); }
+      else { const b = col('#FFF8EE');
+        for (const dx of [-1,1]) for (const dy of [-1,1]) blob(dx*u*0.68,-u*0.32+dy*u*0.18,u*0.22,u*0.22,b);
+        rrect(-u*0.7,-u*0.46,u*1.4,u*0.28,u*0.14,b,false); }
+      cy = -u*0.5; break; }
+    case 'balloon': {
+      const bob = reduce ? 0 : Math.sin(t*1.6 + hash(e.id))*u*0.12;
+      ctx.translate(0,bob);
+      const bImg = balloonImg[e.house];
+      if (bImg.ok){   // each sister has her own set; the knot sits on the cell's bottom edge, where the string ends
+        const cw = bImg.naturalWidth/BALLOON_FRAMES, ch = bImg.naturalHeight, dh = u*2.0, dw = dh*cw/ch;
+        ctx.drawImage(dim(bImg), (mixHash(e.id) % BALLOON_FRAMES)*cw, 0, cw, ch, -dw/2, u*0.82 - dh, dw, dh);
+        cy = -u*0.1; rad = u*0.85; break; }
+      if (hash(e.id)%3===0){ heart(0,u*0.1,u*0.75,c); ctx.beginPath(); ctx.moveTo(0,u*0.62); ctx.bezierCurveTo(-u*0.9,u*0.05,-u*0.45,-u*0.62,0,-u*0.16); ctx.bezierCurveTo(u*0.45,-u*0.62,u*0.9,u*0.05,0,u*0.62); ink(); }
+      else blob(0,0,u*0.62,u*0.74,c);
+      blob(-u*0.2,-u*0.3,u*0.11,u*0.17,'rgba(255,255,255,.6)',false,-0.5);
+      cy = 0; rad = u*0.8; break; }
+  }
+  if (e.amount >= 1000) sparkle(0, cy, rad, t);
+  ctx.restore();
+  return {x, y: y + cy*g, r: rad*g + 6, id: e.id};
+}
+
+/* one fixed food bowl at each door, in the colour of that house's roof — scenery, not tied to any entry */
+const BOWL_AT = [0.5, 0.1];   // at the front corner on the inner side (× hw), just in front of the wall (× band)
+/* bowls.png: 2 frames from Gemini, anniu (blue-violet) then haru (coral); falls back to the drawn bowl if it fails to load */
+const bowlImg = new Image(); bowlImg.onload = () => { bowlImg.ok = true; }; bowlImg.src = 'img/bowls.png';
+function drawBowl(house, x, y){
+  const u = hw*0.1;
+  ctx.save(); ctx.translate(x,y);
+  shadow(0,0,u*1.05,u*0.22);
+  if (bowlImg.ok){
+    const cw = bowlImg.naturalWidth/2, ch = bowlImg.naturalHeight, dh = u*1.8, dw = dh*cw/ch;
+    ctx.drawImage(dim(bowlImg), (house==='anniu' ? 0 : 1)*cw, 0, cw, ch, -dw/2, -dh, dw, dh);
+    ctx.restore(); return;
+  }
+  blob(0,-u*0.58,u*0.72,u*0.42,col('#C98B5E'));                       // kibble mound
+  for (const [kx,ky] of [[-0.3,-0.72],[0.05,-0.82],[0.32,-0.66],[-0.08,-0.6]]) blob(kx*u, ky*u, u*0.12, u*0.09, col('#A86E45'), false);
+  shape([[-u*1.05,-u*0.55],[u*1.05,-u*0.55],[u*0.7,0],[-u*0.7,0]], col(HOUSES[house].roof), u*0.25);
+  heart(0,-u*0.25,u*0.16,'rgba(255,255,255,.85)');
+  ctx.restore();
+}
+
+/* one fixed lamp under each eave (2026-10-18: the lantern stopped being a decoration), between the door and the outer wall,
+   on the side away from the bowl. Both houses get the same warm lamp: unlit by day, lit at night */
+const LAMP_AT = 0.36, LAMP_DROP = 0.033;   // × hw: out from the house centre towards the outer edge, and down from the eave
+/* where the cord shows from (× hw below the pivot): just under the scallops, whose bottom sits at a different height
+   over each lamp — one shared value left a gap above haru's (2026-10-18) */
+const LAMP_CORD_TOP = {anniu:0.03, haru:0.015};
+/* lamps.png: 2 frames (unlit, lit); falls back to the drawn lantern if it fails to load */
+const lampImg = new Image(); lampImg.onload = () => { lampImg.ok = true; }; lampImg.src = 'img/lamps.png';
+function drawLamp(house, t){
+  const x = hx[house] + HOUSES[house].side*LAMP_AT*hw, y = eaveY(house), u = hw*0.085*phoneK(2);   // 65% of the first try: at 0.13 it crowded the door (2026-10-18)
+  ctx.save(); ctx.translate(x, y - hw*0.01);   // tucked just under the eave's edge
+  if (!reduce) ctx.rotate(Math.sin(t*1.1 + (house==='anniu' ? 0 : 1.7))*0.04);   // a slight swing from where it hangs
+  /* hung lower than the eave (2026-10-18), so a short cord bridges the gap instead of the lamp floating */
+  const drop = (LAMP_DROP + 0.01)*hw;   // the cord starts under the scallops: drawn from the pivot it poked out over the eave
+  ctx.beginPath(); ctx.moveTo(0, LAMP_CORD_TOP[house]*hw); ctx.lineTo(0, drop + hw*0.01);
+  ctx.lineWidth = lw(); ctx.lineCap = 'round'; ctx.strokeStyle = night ? '#5A4650' : '#8A6450'; ctx.stroke();
+  ctx.translate(0, drop);
+  if (lampImg.ok){
+    const cw = lampImg.naturalWidth/2, ch = lampImg.naturalHeight, dh = u*1.8, dw = dh*cw/ch;
+    if (night){ ctx.globalAlpha = 0.4; blob(0,dh*0.6,dh*0.62,dh*0.62,'#FFC27A',false); ctx.globalAlpha = 1; }
+    ctx.drawImage(lampImg, (night ? 1 : 0)*cw, 0, cw, ch, -dw/2, 0, dw, dh);   // no dim(): the lit frame is meant to glow
+    ctx.restore(); return;
+  }
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,u*0.35); ink();
+  if (night){ ctx.globalAlpha = 0.4; blob(0,u*1.05,u*1.3,u*1.3,'#FFC27A',false); ctx.globalAlpha = 1; }
+  rrect(-u*0.28,u*0.32,u*0.56,u*0.16,u*0.06,col('#8E6B6F'));
+  blob(0,u*1.05,u*0.58,u*0.62, night ? '#FFD38A' : '#FBE3A8');
+  rrect(-u*0.28,u*1.6,u*0.56,u*0.16,u*0.06,col('#8E6B6F'));
+  heart(0,u*1.08,u*0.2,'rgba(255,255,255,.75)');
+  ctx.restore();
+}
+
+/* ---------- chibi shibas: big head, round eyes, blush ---------- */
+const SHIBA = {
+  anniu:{fur:'#3A3236', fur2:'#2C2529', cream:'#FFF3E4', brow:'#E2A86E', inner:'#F2B6B0'},
+  haru: {fur:'#EBA868', fur2:'#DA9356', cream:'#FFF6EA', brow:null,      inner:'#F7C3B5'},
+};
+/* mochi-style: always facing the viewer; moves by hopping, idles with a soft squish, blinks now and then */
+function drawShiba(x,y,s,p,flip,t,walking,sitting,seed=0){
+  const dir = flip ? -1 : 1;
+  const hop = walking ? Math.abs(Math.sin(t*7)) : 0;
+  const lift = hop*s*0.16;
+  const squash = walking ? (hop < 0.25 ? 0.08*(1-hop/0.25) : -0.04*hop) : (reduce ? 0 : Math.sin(t*2.2+seed)*0.025);
+  ctx.save(); ctx.translate(x,y);
+  shadow(0,0,s*0.46*(1-hop*0.25),s*0.1*(1-hop*0.25));
+  ctx.translate(0,-lift); ctx.scale(1+squash, 1-squash);
+  if (!walking && !reduce) ctx.rotate(Math.sin(t*0.9+seed)*0.05);
+  const bx = 0, by = -s*0.45, brx = s*0.48, bry = s*0.44;
+  // tail peeks out from the side opposite to where she is heading
+  const wag = reduce ? 0 : Math.sin(t*(walking?12:7)+seed)*0.35;
+  ctx.save(); ctx.translate(-dir*s*0.4, -s*0.5); ctx.rotate(wag*dir);
+  blob(0,-s*0.06,s*0.14,s*0.13,p.fur);
+  ctx.beginPath(); ctx.arc(0,-s*0.06,s*0.065,Math.PI*0.1,Math.PI*1.5); ctx.lineWidth = s*0.022; ctx.strokeStyle = p.fur2; ctx.lineCap='round'; ctx.stroke();
+  ctx.restore();
+  // one round mochi body
+  const bodyPath = () => { ctx.beginPath(); ctx.ellipse(bx, by, brx, bry, 0, 0, Math.PI*2); };
+  // head + ears as ONE outline: ellipse arcs joined to two rounded triangles, with small fillets where they meet
+  const E = th => [bx + brx*Math.cos(th), by + bry*Math.sin(th)];
+  const thO = -0.74, thI = -1.36, dd = 0.14, rTip = s*0.05, rFil = s*0.04;
+  const T = [s*0.29, by - bry*1.34], TL = [-T[0], T[1]];
+  const PI = E(thI), PO = E(thO), PIL = E(Math.PI - thI), POL = E(Math.PI - thO);
+  const silhouette = () => {
+    ctx.beginPath();
+    let q = E(thO + dd); ctx.moveTo(q[0], q[1]);
+    ctx.ellipse(bx, by, brx, bry, 0, thO + dd, Math.PI - thO - dd);
+    q = E(Math.PI - thI + dd - 2*Math.PI);
+    ctx.arcTo(POL[0], POL[1], TL[0], TL[1], rFil);
+    ctx.arcTo(TL[0], TL[1], PIL[0], PIL[1], rTip);
+    ctx.arcTo(PIL[0], PIL[1], q[0], q[1], rFil);
+    ctx.ellipse(bx, by, brx, bry, 0, Math.PI - thI + dd - 2*Math.PI, thI - dd);
+    q = E(thO + dd);
+    ctx.arcTo(PI[0], PI[1], T[0], T[1], rFil);
+    ctx.arcTo(T[0], T[1], PO[0], PO[1], rTip);
+    ctx.arcTo(PO[0], PO[1], q[0], q[1], rFil);
+    ctx.closePath();
+  };
+  silhouette(); ctx.fillStyle = p.fur; ctx.fill();
+  for (const [a,b,c,ex] of [[PI,T,PO,1],[PIL,TL,POL,-1]]){
+    const g = [(a[0]+b[0]+c[0])/3, (a[1]+b[1]+c[1])/3];
+    blob(g[0], g[1] - s*0.01, s*0.045, s*0.075, p.inner, false, ex*0.2);
+  }
+  ctx.save(); bodyPath(); ctx.clip();
+  const fx = dir*s*0.035;   // face leans a little toward the heading
+  blob(fx, -s*0.06, s*0.25, s*0.17, p.cream, false);                         // belly
+  for (const ex of [-1,1]) blob(fx+ex*s*0.19, -s*0.37, s*0.17, s*0.13, p.cream, false);   // cheeks
+  blob(fx, -s*0.34, s*0.13, s*0.1, p.cream, false);                          // muzzle
+  ctx.restore();
+  silhouette(); ink();
+  // face
+  const blink = !reduce && ((t + seed*1.7) % 4.2) < 0.13;
+  for (const ex of [-1,1]){
+    const ex_ = fx + ex*s*0.17;
+    ctx.globalAlpha = p.brow ? 1 : 0.85; blob(ex_, -s*0.66, s*0.045, s*0.03, p.brow || p.cream, false); ctx.globalAlpha = 1;
+    if (blink){ ctx.beginPath(); ctx.moveTo(ex_-s*0.045, -s*0.55); ctx.quadraticCurveTo(ex_, -s*0.52, ex_+s*0.045, -s*0.55);
+      ctx.lineWidth = Math.max(1.2, s*0.02); ctx.strokeStyle = '#2A2226'; ctx.lineCap='round'; ctx.stroke(); }
+    else { blob(ex_, -s*0.555, s*0.056, s*0.066, '#2A2226', false); blob(ex_+s*0.02, -s*0.58, s*0.021, s*0.021, '#FFFFFF', false); }
+    ctx.globalAlpha = 0.5; blob(fx+ex*s*0.3, -s*0.44, s*0.065, s*0.038, '#F58C9E', false); ctx.globalAlpha = 1;
+  }
+  blob(fx, -s*0.465, s*0.04, s*0.03, '#2A2226', false);
+  ctx.beginPath(); ctx.moveTo(fx-s*0.07, -s*0.41); ctx.quadraticCurveTo(fx-s*0.035, -s*0.365, fx, -s*0.415);
+  ctx.quadraticCurveTo(fx+s*0.035, -s*0.365, fx+s*0.07, -s*0.41);
+  ctx.lineWidth = Math.max(1, s*0.018); ctx.strokeStyle = '#6A4E55'; ctx.lineCap='round'; ctx.stroke();
+  // little front paws
+  for (const ex of [-1,1]) blob(fx+ex*s*0.15, -s*0.065, s*0.09, s*0.055, p.cream);
+  ctx.restore();
+}
+/* illustrated sprites (4 frames each: normal, blink, wink, happy); falls back to the drawn mochi if a file fails to load */
+const SPRITES = {};
+for (const k of ['anniu','haru']){ const im = new Image(); im.onload = () => { im.ok = true; }; im.src = 'img/' + k + '.png'; im.dog = k; SPRITES[k] = im; }
+function drawSprite(x,y,s,img,fi,t,hopping,seed){
+  const hop = hopping ? Math.abs(Math.sin(t*7)) : 0, lift = hop*s*0.16;
+  const squash = hopping ? (hop < 0.25 ? 0.08*(1-hop/0.25) : -0.04*hop) : (reduce ? 0 : Math.sin(t*2.2+seed)*0.025);
+  ctx.save(); ctx.translate(x,y);
+  shadow(0,0,s*0.46*(1-hop*0.25),s*0.1*(1-hop*0.25));
+  ctx.translate(0,-lift); ctx.scale(1+squash, 1-squash);
+  if (!hopping && !reduce) ctx.rotate(Math.sin(t*0.9+seed)*0.05);
+  /* frames 4–5 are the budget moods, in their own sheet (wider cells, 2 frames): drawn at their own width so nobody gets
+     squeezed, and scaled by MOOD_SCALE so the body matches the other frames (see MOOD_SCALE) */
+  const mood = fi >= 4 && moodImg[img.dog] && moodImg[img.dog].ok;
+  const sheet = mood ? moodImg[img.dog] : img, n = mood ? 2 : 4, f = mood ? fi - 4 : Math.min(fi, 3);
+  const cw = sheet.naturalWidth/n, ch = sheet.naturalHeight, dh = s*1.12*(mood ? MOOD_SCALE[img.dog][f] : 1), dw = dh*cw/ch;
+  ctx.drawImage(dim(sheet), f*cw, 0, cw, ch, -dw/2, -dh, dw, dh);
+  ctx.restore();
+}
+/* budget moods (Gemini 2026-11-19; cut with tools/art/cut.js at 240 high): frame 0 worried (≥ 80% of the budget), 1 dejected (over it).
+   Their drooping ears make each frame shorter than the old ones, so at the same height the body came out ~10% bigger;
+   MOOD_SCALE = old paw span ÷ new paw span, measured on the bottom rows (anniu 106/118, 106/114; haru 112/125, 112/126).
+   Re-measure if the art is redone */
+const MOOD_SCALE = {anniu:[0.898, 0.930], haru:[0.896, 0.889]};
+const moodImg = {};
+for (const k of ['anniu','haru']){ const im = new Image(); im.onload = () => { im.ok = true; }; im.src = 'img/' + k + '-mood.png'; moodImg[k] = im; }
+let yardMood = 'normal';   // this month's spending against the budget: normal / worried / sad (set by renderList)
+function frameFor(d){
+  if (d.happyUntil > clock) return 3;   // the happy hop right after an entry still wins over the budget mood (decided 2026-11-19)
+  if (yardMood === 'worried') return 4;
+  if (yardMood === 'sad') return 5;
+  if (reduce) return 0;
+  if (!d.nextBlink){ d.nextBlink = clock + 1 + Math.random()*3; d.nextWink = clock + 8 + Math.random()*8; }
+  if (clock > d.nextBlink){ d.blinkUntil = clock + 0.16; d.nextBlink = clock + 2.5 + Math.random()*3; }
+  if (clock > d.nextWink){ d.winkUntil = clock + 0.8; d.nextWink = clock + 12 + Math.random()*10; }
+  if (d.winkUntil > clock) return 2;
+  return d.blinkUntil > clock ? 1 : 0;
+}
+const dogs = ['anniu','haru'].map(k => ({k, x:k==='anniu'?0.3:-0.3, y:0.55, tx:0, ty:0.55, wait:1+Math.random()*2, flip:k==='haru', sit:false}));
+function dogTarget(d){
+  if (Math.random() < 0.3){ d.tx = 0; d.ty = 0.14; d.sitAfter = true; }
+  else { d.tx = (Math.random()*1.4 - 0.7); d.ty = 0.32 + Math.random()*0.56; d.sitAfter = Math.random() < 0.45; }
+}
+function stepDog(d, dt){
+  if (reduce){ d.x = d.k==='anniu' ? 0.22 : -0.22; d.y = 0.34; d.sit = true; return false; }
+  const dx = d.tx - d.x, dy = d.ty - d.y, dist = Math.hypot(dx, dy);
+  if (dist > 0.01){ const sp = 0.3*dt; d.x += dx/dist*Math.min(sp,dist); d.y += dy/dist*Math.min(sp,dist); d.flip = dx < 0; d.sit = false; return true; }
+  if (d.sitAfter) d.sit = true;
+  d.wait -= dt; if (d.wait <= 0){ dogTarget(d); d.wait = 1.8 + Math.random()*3; }
+  return false;
+}
+
+/* ---------- scenery ---------- */
+/* painted backdrop (Gemini): sky, hills, fence and lawn in one picture. The lawn line under the fence (horizon, a fraction of the
+   picture's height) is pinned to groundY; whatever the picture can't cover is filled with its own edge colours (top, bottom).
+   Every picture is a Gemini repaint of the first day one, so they share one composition; horizon and edge colours come from
+   tools/scene-measure.js. Each season has its own day/night pair with the ground already dressed (petals, leaves, snow), so the
+   lawn needs nothing drawn on top (decided 2026-10-18); a season still without its pair falls back to the plain one. */
+const SCENE = {
+  day:  {src:'img/scene-day.jpg',   horizon:1034/1536, top:'#BDE9FD', bottom:'#C6E29E'},
+  night:{src:'img/scene-night.jpg', horizon:1034/1536, top:'#2B2760', bottom:'#345F6E'},
+};
+const SEASON_SCENE = [   // spring, summer, autumn, winter
+  {day:  {src:'img/scene-spring-day.jpg',   horizon:1035/1536, top:'#B8E5FC', bottom:'#C5DF9B'},
+   night:{src:'img/scene-spring-night.jpg', horizon:1035/1536, top:'#34376E', bottom:'#486C85'}},
+  {day:  {src:'img/scene-summer-day.jpg',   horizon:1035/1536, top:'#B9E7FD', bottom:'#8DCD6A'},
+   night:{src:'img/scene-summer-night.jpg', horizon:1035/1536, top:'#323471', bottom:'#365F75'}},
+  {day:  {src:'img/scene-autumn-day.jpg',   horizon:1035/1536, top:'#BBE6FC', bottom:'#D2C875'},
+   night:{src:'img/scene-autumn-night.jpg', horizon:1034/1536, top:'#2E3267', bottom:'#4C5D5F'}},
+  // winter: snow buries the lawn line, so scene-measure.js locks onto a snowy rail instead (992 / 1009).
+  // The fence sits where it does in the other seasons, so use their horizon to keep everything lined up
+  {day:  {src:'img/scene-winter-day.jpg',   horizon:1035/1536, top:'#BAE7FD', bottom:'#E1E9ED'},
+   night:{src:'img/scene-winter-night.jpg', horizon:1035/1536, top:'#292A58', bottom:'#6775A4'}},
+];
+for (const sc of [SCENE.day, SCENE.night, ...SEASON_SCENE.flatMap(p => p ? [p.day, p.night] : [])]){
+  const im = new Image(); im.onload = () => { im.ok = true; }; im.src = sc.src; sc.img = im; }
+function sceneNow(){
+  const t = night ? 'night' : 'day', own = SEASON_SCENE[seasonNow()]?.[t];
+  return own && own.img.ok ? {...own, seasonal:true} : SCENE[t];
+}
+function drawBackdrop(){
+  const sc = sceneNow(); if (!sc || !sc.img.ok) return null;
+  const im = sc.img, k = Math.max(W/im.naturalWidth, groundY/(sc.horizon*im.naturalHeight));   // fill the width, and the sky down to the horizon
+  const dw = im.naturalWidth*k, dh = im.naturalHeight*k, dx = (W-dw)/2, dy = groundY - sc.horizon*dh, bot = dy + dh;
+  ctx.fillStyle = sc.top; ctx.fillRect(0, 0, W, Math.ceil(dy)+1);
+  ctx.drawImage(im, dx, dy, dw, dh);
+  if (bot < H){   // lawn runs past the picture: fade its bottom edge into a flat fill of the same green
+    const fade = Math.min(dh*0.08, 40), g = ctx.createLinearGradient(0, bot-fade, 0, bot);
+    g.addColorStop(0, sc.bottom + '00'); g.addColorStop(1, sc.bottom);
+    ctx.fillStyle = g; ctx.fillRect(0, bot-fade, W, fade);
+    ctx.fillStyle = sc.bottom; ctx.fillRect(0, bot-1, W, H-bot+1);
+  }
+  return sc;
+}
+const stars = Array.from({length:36}, () => [Math.random(), Math.random()*0.5, Math.random()]);
+const clouds = Array.from({length:4}, (_,i) => [Math.random(), 0.08 + i*0.07, 0.6+Math.random()*0.6]);
+const flowers = Array.from({length:22}, (_,i) => [((i*0.618)%1), 0.12 + ((i*0.377)%1)*0.85, i%3]);
+function cloud(x,y,r){
+  ctx.fillStyle = night ? 'rgba(200,200,240,.18)' : 'rgba(255,255,255,.92)';
+  ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.arc(x+r*1.0,y+r*0.15,r*0.8,0,7); ctx.arc(x-r*1.0,y+r*0.2,r*0.72,0,7); ctx.arc(x+r*0.3,y-r*0.45,r*0.7,0,7); ctx.fill();
+}
+
+/* ---------- the season dresses the scene (decided 2026-10-17) ----------
+   a big tree on each side (trees.png: 4 frames spring → winter, one Gemini tree repainted per season; the right one is mirrored),
+   things settled on the lawn and along the roofs, and something in the air: petals, leaves, snow; summer has dragonflies by day
+   and fireflies at night */
+const treeImg = new Image(); treeImg.onload = () => { treeImg.ok = true; }; treeImg.src = 'img/trees.png';
+/* the illustrated roof is a dome, not a triangle: top outline measured from houses.png (art px, both houses alike).
+   Laying things along the straight L–A–R line puts them on the roof's face instead of its edge */
+const ROOF_EDGE = {x0:20, step:16, y:[215,180,157,142,127,114,101,89,77,65,53,43,33,24,15,9,5,5,8,14,22,31,41,52,64,76,88,100,114,127,141,158,181,214]};
+function edgeY(ax){   // art y of the top outline at art x
+  const n = ROOF_EDGE.y.length - 1, i = Math.max(0, Math.min(n - 1e-6, (ax - ROOF_EDGE.x0)/ROOF_EDGE.step)), k = Math.floor(i), f = i - k;
+  return ROOF_EDGE.y[k]*(1-f) + ROOF_EDGE.y[k+1]*f;
+}
+const roofEdge = (house, ax, down=0) => artPt(house, ax, edgeY(ax) + down);   // canvas point on the outline, pushed `down` art px into the roof
+/* a small seeded random, so what lies on the ground stays put between frames and visits */
+function seeded(n){ let s = n*9301 + 49297; return () => (s = (s*9301 + 49297) % 233280) / 233280; }
+const LITTER = (() => { const r = seeded(7); return Array.from({length:44}, () => ({x:r(), y:0.06 + r()*0.92, rot:r()*6.28, k:r(), s:0.7 + r()*0.6})); })();
+/* scattered over the whole roof face, from the outline down to just above the eaves — not only along the edge (2026-10-18).
+   Spots closer than ROOF_GAP to one already taken (or inside the window) are redrawn, so they never pile up in one corner */
+const ROOF_FACE_BOTTOM = 228, ROOF_WINDOW = [285, 112, 62], ROOF_GAP = 70;   // art px: lowest point; round window (x, y, keep-out); min spacing
+const ROOF_LITTER = (() => {
+  const r = seeded(11), out = [];
+  for (let tries = 0; out.length < 9 && tries < 500; tries++){
+    const ax = 44 + r()*480, top = edgeY(ax), ay = top + 4 + r()*Math.max(0, ROOF_FACE_BOTTOM - top - 4);
+    if (Math.hypot(ax - ROOF_WINDOW[0], ay - ROOF_WINDOW[1]) < ROOF_WINDOW[2]) continue;
+    if (out.some(o => Math.hypot(o.ax - ax, o.ay - ay) < ROOF_GAP)) continue;
+    out.push({ax, ay, rot:r()*6.28, k:r(), s:0.7 + r()*0.5});
+  }
+  return out;
+})();
+const PETAL = ['#F9C4D2','#F7B0C4','#FBD6E0'], LEAF = ['#E8743B','#D9532E','#F2A93B','#E5862F'];
+/* petals.png / leaves.png: 6 frames each, dragonfly.png: 2 frames (wings up, wings down) — all Gemini, cut with blobs.
+   Falling ones also squash sideways (sx) so they seem to tumble */
+const sprite = src => { const im = new Image(); im.onload = () => { im.ok = true; }; im.src = src; return im; };
+const petalImg = sprite('img/petals.png'), leafImg = sprite('img/leaves.png'), dragonImg = sprite('img/dragonfly.png');
+function bit(img, frames, k, x, y, h, rot, sx=1){
+  const cw = img.naturalWidth/frames, ch = img.naturalHeight, w = h*cw/ch, fi = Math.min(frames-1, Math.floor(k*frames));
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.scale(sx,1);
+  ctx.drawImage(dim(img, 'brightness(0.78) saturate(0.9)'), fi*cw, 0, cw, ch, -w/2, -h/2, w, h);
+  ctx.restore();
+}
+function petal(x, y, s, rot, c, k=0, sx=1){ if (petalImg.ok) return bit(petalImg, 6, k, x, y, s*2.3, rot, sx);
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+  ctx.beginPath(); ctx.moveTo(0,-s); ctx.quadraticCurveTo(s*0.9,-s*0.2,0,s); ctx.quadraticCurveTo(-s*0.9,-s*0.2,0,-s); ctx.fillStyle = col(c); ctx.fill();
+  ctx.restore(); }
+function leaf(x, y, s, rot, c, k=0, sx=1){ if (leafImg.ok) return bit(leafImg, 6, k, x, y, s*1.9, rot, sx);
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+  ctx.beginPath();   // five soft lobes, like a tiny maple leaf
+  for (let i=0;i<5;i++){ const a = -Math.PI/2 + i*Math.PI*2/5; ctx.moveTo(0,0); ctx.ellipse(Math.cos(a)*s*0.5, Math.sin(a)*s*0.5, s*0.52, s*0.28, a, 0, Math.PI*2); }
+  ctx.fillStyle = col(c); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,s*0.9); ctx.lineWidth = Math.max(1, s*0.12); ctx.strokeStyle = col('#9A5A3A'); ctx.lineCap='round'; ctx.stroke();
+  ctx.restore(); }
+const treeSize = () => { const cw = treeImg.naturalWidth/4, ch = treeImg.naturalHeight, dh = Math.min(H*0.72, hw*1.55); return {cw, ch, dh, dw: dh*cw/ch}; };
+/* how far each tree reaches in from its edge of the picture (its centre sits 0.16 dw off the edge, half a width either way) */
+const treeReach = () => treeImg.ok ? treeSize().dw*0.34 : 0;
+function drawTrees(){
+  if (!treeImg.ok) return;
+  const {cw, ch, dh, dw} = treeSize(), y = groundY + band*0.07, fi = seasonNow();
+  const src = dim(treeImg, 'brightness(0.72) saturate(0.85)');
+  for (const side of [-1,1]){
+    const cx = side < 0 ? -dw*0.16 : W + dw*0.16;   // mostly off the edge, framing the yard
+    shadow(cx, y, dw*0.3, band*0.06);
+    ctx.save(); ctx.translate(cx, y); if (side > 0) ctx.scale(-1,1);
+    ctx.drawImage(src, fi*cw, 0, cw, ch, -dw/2, -dh, dw, dh);
+    ctx.restore();
+  }
+}
+function drawLawnLitter(painted){
+  if (painted && painted.seasonal) return;   // the season's own backdrop already has its petals / leaves / snow on the lawn
+  const s = seasonNow(), u = hw*0.035;
+  if (s===3){   // winter: the lawn goes soft white, with heavier drifts here and there
+    const g = ctx.createLinearGradient(0, groundY, 0, H);
+    g.addColorStop(0, night ? 'rgba(220,228,250,.55)' : 'rgba(255,255,255,.78)'); g.addColorStop(1, night ? 'rgba(220,228,250,.42)' : 'rgba(255,255,255,.62)');
+    ctx.fillStyle = g; ctx.fillRect(0, groundY, W, H - groundY);
+    for (const l of LITTER.slice(0,16)){ ctx.globalAlpha = night ? 0.35 : 0.55; blob(l.x*W, groundY + band*l.y, hw*0.16*l.s, hw*0.05*l.s, '#FFFFFF', false); }
+    ctx.globalAlpha = 1; return;
+  }
+  if (s===1) return;   // summer: a clean green lawn
+  for (const l of LITTER.slice(0, s===0 ? 16 : 12)){   // just a sprinkle: more looked messy (2026-10-18); leaves are bigger, so fewer
+    const x = l.x*W, y = groundY + band*l.y;
+    if (s===0) petal(x, y, u*l.s, l.rot, PETAL[Math.floor(l.k*PETAL.length)], l.k);
+    else leaf(x, y, u*1.3*l.s, l.rot, LEAF[Math.floor(l.k*LEAF.length)], l.k);
+  }
+}
+function drawRoofLitter(house){
+  if (!houseImg.ok) return;   // the drawn fallback roof has a different outline
+  const s = seasonNow(), k = artK();
+  if (s===3 && winterHouseImg.ok) return;   // the winter houses have their snow painted on
+  if (s===3){   // fallback when houses-winter.png is missing: a snow cap following the dome (looked out of place, so only a fallback)
+    const xs = []; for (let ax = 30; ax <= 538; ax += 6) xs.push(ax);
+    ctx.beginPath();
+    xs.forEach((ax,i) => { const [x,y] = roofEdge(house, ax, -2); i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); });
+    for (let i = xs.length-1; i >= 0; i--){ const ax = xs[i], mid = 1 - Math.abs(ax - 284)/254, th = 14 + 22*mid + 5*Math.sin(ax*0.09);
+      const [x,y] = roofEdge(house, ax, th); ctx.lineTo(x,y); }
+    ctx.closePath(); ctx.fillStyle = night ? '#DCE3F5' : '#FFFFFF'; ctx.fill();
+    ctx.lineWidth = lw(); ctx.strokeStyle = night ? 'rgba(20,18,40,.45)' : 'rgba(120,140,170,.45)'; ctx.lineJoin='round'; ctx.stroke();
+    return;
+  }
+  if (s===1) return;
+  for (const l of ROOF_LITTER){
+    const [x,y] = artPt(house, l.ax, l.ay);
+    if (s===0) petal(x, y, hw*0.03*l.s, l.rot, PETAL[Math.floor(l.k*PETAL.length)], l.k);
+    else leaf(x, y, hw*0.045*l.s, l.rot, LEAF[Math.floor(l.k*LEAF.length)], l.k);
+  }
+}
+/* what's in the air; nothing moves with reduced motion */
+let flakes = [], flakeSeason = -1, dragonfly = null, nextDragonfly = 3;
+const FIREFLIES = Array.from({length:18}, (_,i) => ({x:Math.random(), y:0.25 + Math.random()*0.7, ph:Math.random()*6.28, sp:0.6 + Math.random()*0.8}));
+function spawnFlake(s, anywhere){
+  const sz = s===3 ? 0.6 + Math.random()*0.9 : 0.8 + Math.random()*0.5;
+  return {x:Math.random()*W, y:anywhere ? Math.random()*H : -12, vy:(s===3 ? 0.07 : 0.05 + Math.random()*0.03)*H*(0.7 + Math.random()*0.6),
+    vx:(s===3 ? 0 : 0.03*W), sw:Math.random()*6.28, sf:0.8 + Math.random()*1.2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*2.4, sz, k:Math.random()};
+}
+function drawWeather(dt){
+  if (reduce) return;
+  const s = seasonNow();
+  if (s !== flakeSeason){ flakeSeason = s; flakes = s===1 ? [] : Array.from({length: s===3 ? 46 : s===0 ? 12 : 8}, () => spawnFlake(s, true)); }
+  for (const f of flakes){
+    f.y += f.vy*dt; f.x += (f.vx + Math.sin(clock*f.sf + f.sw)*hw*0.25)*dt; f.rot += f.vr*dt;
+    if (f.y > H + 12 || f.x > W + 20 || f.x < -20) Object.assign(f, spawnFlake(s, false));
+    if (s===3){ ctx.globalAlpha = 0.85; blob(f.x, f.y, hw*0.011*f.sz + 0.6, hw*0.011*f.sz + 0.6, '#FFFFFF', false); ctx.globalAlpha = 1; }
+    else { const sx = 0.25 + 0.75*Math.abs(Math.cos(clock*f.sf*1.6 + f.sw));   // tumbling
+      if (s===0) petal(f.x, f.y, hw*0.03*f.sz, f.rot, PETAL[Math.floor(f.k*PETAL.length)], f.k, sx);
+      else leaf(f.x, f.y, hw*0.045*f.sz, f.rot, LEAF[Math.floor(f.k*LEAF.length)], f.k, sx); }
+  }
+  if (s !== 1) return;
+  if (night){   // fireflies drift over the lawn and blink
+    for (const f of FIREFLIES){
+      const x = (f.x + Math.sin(clock*0.11*f.sp + f.ph)*0.06)*W, y = groundY*0.55 + (H - groundY*0.55)*(f.y + Math.sin(clock*0.17*f.sp + f.ph*2)*0.05);
+      const a = Math.pow(Math.max(0, Math.sin(clock*1.3*f.sp + f.ph)), 2); if (a < 0.02) continue;
+      const R = hw*0.09, g = ctx.createRadialGradient(x, y, 0, x, y, R); g.addColorStop(0, `rgba(235,255,140,${0.8*a})`); g.addColorStop(1, 'rgba(235,255,140,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R*2, R*2);
+      ctx.globalAlpha = a; blob(x, y, Math.max(2, hw*0.013), Math.max(2, hw*0.013), '#FAFFD0', false); ctx.globalAlpha = 1;
+    }
+    return;
+  }
+  // a dragonfly darts across now and then
+  if (!dragonfly){ if (clock < nextDragonfly) return;
+    const dir = Math.random() < 0.5 ? 1 : -1; dragonfly = {t0:clock, dur:5 + Math.random()*2, dir, y0:groundY*(0.45 + Math.random()*0.35), ph:Math.random()*6.28}; }
+  const k = (clock - dragonfly.t0)/dragonfly.dur;
+  if (k >= 1){ dragonfly = null; nextDragonfly = clock + 6 + Math.random()*8; return; }
+  const dart = k + 0.04*Math.sin(k*40);   // hovers, then darts forward
+  const x = dragonfly.dir > 0 ? -30 + (W + 60)*dart : W + 30 - (W + 60)*dart, y = dragonfly.y0 + Math.sin(k*9 + dragonfly.ph)*hw*0.12, u = hw*0.11;
+  ctx.save(); ctx.translate(x, y); ctx.scale(dragonfly.dir, 1);
+  if (dragonImg.ok){   // two frames flicked fast = beating wings; frame 1 sits 40/200 higher in its cell (aligned by its wingtips), so drop it back
+    const fi = Math.floor(clock*16) % 2, cw = dragonImg.naturalWidth/2, ch = dragonImg.naturalHeight, dh = u*2.4, dw = dh*cw/ch;
+    ctx.drawImage(dragonImg, fi*cw, 0, cw, ch, -dw/2, -dh/2 + (fi ? dh*40.3/200 : 0), dw, dh);
+    ctx.restore(); return;
+  }
+  const flap = 0.35 + 0.65*Math.abs(Math.sin(clock*38));
+  for (const [wx, ww] of [[-u*0.15, 1], [u*0.25, 0.85]]) for (const up of [-1, 1]){
+    ctx.globalAlpha = 0.55; blob(wx, up*u*0.42*flap, u*0.5*ww, u*0.16, '#DFF4FF', false, up*0.25); }
+  ctx.globalAlpha = 1;
+  rrect(-u*1.1, -u*0.08, u*1.2, u*0.16, u*0.08, col('#3FA7A0'), false);   // tail
+  blob(u*0.2, 0, u*0.2, u*0.14, col('#2F8F89'), false); blob(u*0.45, 0, u*0.15, u*0.15, col('#2F8F89'), false);   // body, head
+  ctx.restore();
+}
+
+/* now and then at night a shooting star crosses the upper sky (never with reduced motion) */
+let meteor = null, nextMeteor = 4 + Math.random()*6;
+function drawMeteor(){
+  if (!meteor){
+    if (clock < nextMeteor) return;
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    meteor = {t0:clock, dur:0.9 + Math.random()*0.4, dir, x0:W*(dir > 0 ? 0.05 + Math.random()*0.45 : 0.5 + Math.random()*0.45), y0:groundY*(0.04 + Math.random()*0.16), len:hw*(0.5 + Math.random()*0.3)};
+  }
+  const k = (clock - meteor.t0)/meteor.dur;
+  if (k >= 1){ meteor = null; nextMeteor = clock + 8 + Math.random()*14; return; }
+  const run = hw*1.1, vx = meteor.dir*0.9, vy = 0.42;   // a shallow dive (~25°), short enough to stay above the hills
+  const hx_ = meteor.x0 + vx*run*k, hy = meteor.y0 + vy*run*k, tail = meteor.len*Math.min(1, k*4);
+  const g = ctx.createLinearGradient(hx_, hy, hx_ - vx*tail, hy - vy*tail);
+  const a = k < 0.75 ? 1 : (1-k)/0.25;   // fades out over the last quarter
+  g.addColorStop(0, `rgba(255,246,216,${a})`); g.addColorStop(1, 'rgba(255,246,216,0)');
+  ctx.beginPath(); ctx.moveTo(hx_, hy); ctx.lineTo(hx_ - vx*tail, hy - vy*tail);
+  ctx.strokeStyle = g; ctx.lineWidth = Math.max(1.5, hw*0.012); ctx.lineCap = 'round'; ctx.stroke();
+  ctx.globalAlpha = a; blob(hx_, hy, Math.max(1.6, hw*0.01), Math.max(1.6, hw*0.01), '#FFFBEA', false); ctx.globalAlpha = 1;
+}
+
+let last = performance.now(), clock = 0, hits = [];
+/* the phone stuttered (使用者 2026-11-20): the yard is repainted whole every frame, at the screen's own rate (often 120 Hz),
+   even while the person is down in the form typing. So: at most 30 frames a second, and nothing at all while the yard is
+   scrolled out of view (everything moves by dt, so the animations keep their speed) */
+const FRAME_MS = 1000 / 30;
+let yardOnScreen = true;
+new IntersectionObserver(es => { yardOnScreen = es[es.length - 1].isIntersecting; }).observe(cv);
+function frame(now){
+  requestAnimationFrame(frame);
+  if (!yardOnScreen){ last = now; return; }
+  if (now - last < FRAME_MS - 2) return;
+  const dt = Math.min(0.05,(now-last)/1000); last = now; clock += dt;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const painted = drawBackdrop();
+  if (!painted){ const sky = ctx.createLinearGradient(0,0,0,groundY); sky.addColorStop(0,PAL['sky-top']); sky.addColorStop(1,PAL['sky-bot']);
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,H); }
+  if (night){
+    for (const [sx,sy,ph] of stars){ ctx.globalAlpha = 0.35+0.35*Math.sin(clock*1.5+ph*9); blob(sx*W, sy*groundY, 1.4, 1.4, '#FFF6D8', false); }
+    ctx.globalAlpha = 1; blob(W*0.5, H*0.12, hw*0.12, hw*0.12, '#FFF1C4', false); blob(W*0.5+hw*0.05, H*0.12-hw*0.03, hw*0.105, hw*0.105, painted ? painted.top : PAL['sky-top'], false);   // the bite is painted in sky colour
+    if (!reduce) drawMeteor();
+  } else {
+    blob(W*0.5, H*0.11, hw*0.13, hw*0.13, '#FFE7A8', false);
+  }
+  for (const c of clouds){ const x = ((c[0] + clock*0.005*c[2]) % 1.3 - 0.15)*W; cloud(x, c[1]*H, hw*0.09*c[2]); }
+  if (!painted){
+    blob(W*0.22, groundY+H*0.06, W*0.46, H*0.2, PAL['hill2'], false);
+    blob(W*0.86, groundY+H*0.06, W*0.4, H*0.16, PAL['hill'], false);
+    const grass = ctx.createLinearGradient(0,groundY,0,H); grass.addColorStop(0,PAL['grass-a']); grass.addColorStop(1,PAL['grass-b']);
+    ctx.fillStyle = grass; ctx.fillRect(0, groundY, W, band);
+    // rounded picket fence
+    const fence = col('#FFF9F2'), pk = Math.max(16, hw*0.1), fh = band*0.17;
+    rrect(-4, groundY - fh*0.68, W+8, fh*0.14, fh*0.07, fence, false);
+    for (let x = pk*0.25; x < W; x += pk) rrect(x, groundY - fh, pk*0.52, fh, [pk*0.26, pk*0.26, 2, 2], fence, false);
+    for (const [fx,fy,k] of flowers){ const x = fx*W, y = groundY + band*fy;
+      for (let i=0;i<5;i++){ const a = i*1.257; blob(x+Math.cos(a)*hw*0.016, y+Math.sin(a)*hw*0.016, hw*0.013, hw*0.013, col(['#FFFFFF','#FFD9E2','#FFF0B3'][k]), false); }
+      blob(x, y, hw*0.009, hw*0.009, col('#F5C26B'), false); }
+  }
+  drawTrees(); drawLawnLitter(painted);
+
+  hits = [];
+  const deco = placed.map(p => ({p, pos:decoPos(p)}));
+  const pop = p => { const b = bornAt[p.e.id]; if (!b) return 1; const k = Math.min(1,(now-b)/650); if (k>=1){ delete bornAt[p.e.id]; return 1; }
+    return reduce ? 1 : 1 + 2.70158*Math.pow(k-1,3) + 1.70158*Math.pow(k-1,2); };
+  for (const house of ['anniu','haru']){
+    drawHouse(house); drawRoofLitter(house);
+    drawLamp(house, clock);
+  }
+  for (const o of deco.filter(o => o.p.zone==='high')){
+    const x = Math.max(hw*0.15, Math.min(W-hw*0.15, o.pos[0])), y = Math.max(hw*0.12, o.pos[1]);
+    hits.push(drawDeco(o.p, x, y, pop(o.p), clock));
+  }
+  for (const o of deco.filter(o => o.p.zone==='sky')){
+    const r = roofPts(o.p.e.house), anchor = HOUSES[o.p.e.house].side < 0 ? r.L : r.R;
+    const x = Math.max(hw*0.12, Math.min(W-hw*0.12, o.pos[0])), y = Math.max(hw*0.12, o.pos[1]);
+    ctx.beginPath(); ctx.moveTo(anchor[0], anchor[1]); ctx.quadraticCurveTo((anchor[0]+x)/2 + 6, (anchor[1]+y)/2 + 12, x, y + hw*0.09*sizeFor(o.p.e.amount)); ink();
+    hits.push(drawDeco(o.p, x, y, pop(o.p), clock));
+  }
+  const ground = deco.filter(o => o.p.zone==='ground').map(o => ({y:o.pos[1], draw:() => hits.push(drawDeco(o.p, o.pos[0], o.pos[1], pop(o.p), clock))}));
+  for (const house of ['anniu','haru']){
+    const x = hx[house] - HOUSES[house].side*BOWL_AT[0]*hw, y = groundY + band*BOWL_AT[1];
+    ground.push({y, draw:() => drawBowl(house, x, y)});
+  }
+  for (const d of dogs){
+    const walking = stepDog(d, dt), x = Math.max(hw*0.18, Math.min(W-hw*0.18, hx[d.k] + d.x*hw)), y = groundY + band*d.y;
+    const hopping = walking || d.happyUntil > clock, seed = d.k==='anniu' ? 0 : 2.3, fi = frameFor(d);
+    ground.push({y, draw:() => SPRITES[d.k].ok ? drawSprite(x, y, hw*0.36, SPRITES[d.k], fi, clock, hopping, seed) : drawShiba(x, y, hw*0.36, SHIBA[d.k], d.flip, clock, hopping, d.sit, seed)});
+  }
+  ground.sort((a,b) => a.y-b.y).forEach(o => o.draw());
+  drawWeather(dt);
+}
+requestAnimationFrame(frame);
+
+/* ---------- shared bits for the panel ---------- */
+const $ = id => document.getElementById(id);
+const status = $('status');
+function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+const money = n => 'NT$' + n.toLocaleString('en-US');
+const monthName = m => `${+m.slice(0,4)} 年 ${+m.slice(5,7)} 月`;
+const shortDate = ymd => `${+ymd.slice(5,7)}/${+ymd.slice(8,10)}`;
+let listMonth = '';   // the month the list shows; follows the current month unless the person switched away
+
+/* tapping a decoration opens a small card above it, asking only whether to take it down (decided 2026-10-17).
+   Taking it down keeps the entry in the books (hidden) and frees the spot; it can be hung back from the edit dialog */
+const popEl = $('pop');
+function closePop(){ selected = null; popEl.hidden = true; }
+function openPop(h){
+  const e = LedgerStore.find(h.id); if (!e) return closePop();
+  selected = e.id;
+  const dl = decoLabel(e.deco);
+  popEl.innerHTML = `<p>要收起這個${dl}嗎？</p>`   // only the question — no amount or entry details (decided 2026-10-17)
+    + `<div class="row"><button type="button" class="ghost" data-act="keep">留著</button><button type="button" class="ghost yes" data-act="hide">收起</button></div>`;
+  popEl.hidden = false;
+  const pw = popEl.offsetWidth, ph = popEl.offsetHeight;
+  const left = Math.max(8, Math.min(W - pw - 8, h.x - pw/2)), above = h.y - h.r - ph - 6;
+  popEl.style.left = left + 'px'; popEl.style.top = (above >= 8 ? above : Math.min(H - ph - 8, h.y + h.r + 6)) + 'px';   // flip below when there's no room above
+  popEl.querySelector('.yes').focus();
+}
+popEl.addEventListener('click', ev => {
+  const btn = ev.target.closest('button[data-act]'); if (!btn) return;
+  const e = LedgerStore.find(selected);
+  if (btn.dataset.act==='hide' && e){
+    const r = LedgerStore.setHidden(e.id, true);
+    status.textContent = r.ok ? `${HOUSES[e.house].name}的狗屋收起了一個${decoLabel(e.deco)}，空出一個位置；這筆帳還在（點清單的這筆可以再掛回去）。` : r.message;
+  }
+  closePop();
+});
+document.addEventListener('keydown', ev => { if (ev.key==='Escape' && !popEl.hidden) closePop(); });
+new ResizeObserver(closePop).observe(cv.parentElement);   // its position was computed for the old size
+
+cv.addEventListener('click', ev => {
+  const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+  let best = null, bd = Infinity;
+  for (const h of hits){ const d = Math.hypot(x-h.x, y-h.y); if (d < h.r && d < bd){ best = h; bd = d; } }
+  if (best && best.id !== selected) openPop(best); else closePop();
+});
+
+/* ---------- the form ---------- */
+const decosEl = $('decos');
+function renderDecos(){
+  const was = (decosEl.querySelector('input[name=deco]:checked')||{}).value || DECOS[0].id;
+  decosEl.innerHTML = DECOS.map(d => `<input type="radio" name="deco" id="deco-${d.id}" value="${d.id}"${d.id===was?' checked':''}><label for="deco-${d.id}">${decoLabel(d.id)}<small>${d.where}</small></label>`).join('');
+}
+renderDecos();
+function renderHouses(){
+  const fewer = placed.filter(p=>p.e.house==='anniu').length <= placed.filter(p=>p.e.house==='haru').length ? 'anniu' : 'haru';
+  $('houses').innerHTML = ['anniu','haru'].map(k => `<input type="radio" name="house" id="house-${k}" value="${k}"${k===fewer?' checked':''}><label for="house-${k}">${HOUSES[k].name}的狗屋<small>${k==='anniu'?'黑柴姐姐':'黃柴妹妹'}</small></label>`).join('');
+}
+renderHouses();
+/* the date defaults to today (phone's local time) and can go back, never forward */
+function resetDate(){ const t = LedgerStore.today(); $('date').value = t; $('date').max = t; $('eDate').max = t; }
+resetDate();
+
+$('f').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const today = LedgerStore.today();
+  const deco = (document.querySelector('input[name=deco]:checked')||{}).value || 'sprout';
+  const house = (document.querySelector('input[name=house]:checked')||{}).value || 'anniu';
+  const chk = ldgCheckInput({amount:$('amt').value, note:$('note').value, date:$('date').value, deco, house}, today);
+  if (!chk.ok){ status.textContent = chk.message; $(chk.field==='note' ? 'note' : chk.field==='date' ? 'date' : 'amt').focus(); return; }
+  listMonth = ldgMonthOf(chk.value.date);   // the list jumps to where the entry went (set before add: add re-renders the list)
+  const r = LedgerStore.add(chk.value);
+  if (!r.ok){ status.textContent = r.message; return; }
+  const v = chk.value, dl = decoLabel(v.deco), hn = HOUSES[v.house].name;
+  if (r.hung){ bornAt[r.rec.id] = performance.now(); const dg = dogs.find(d => d.k===house); if (dg) dg.happyUntil = clock + 1.8; }
+  status.textContent = r.full
+    ? `帳記好了，但${hn}的狗屋${dl}的位置滿了，這筆沒有掛裝飾。可以先點院子裡的舊${dl}把它收起來，再從清單把這筆掛回去。`
+    : r.hung ? `${hn}的狗屋多了一個${dl}（${money(v.amount)}）${v.amount>=1000?'，閃亮版':''}。`
+    : `記好了（${shortDate(v.date)}・${money(v.amount)}）。院子只掛這個月的帳，這筆在 ${+v.date.slice(5,7)} 月的清單裡。`;
+  $('amt').value = ''; $('note').value = ''; resetDate();
+  $('amt').focus();
+});
+
+/* ---------- the list: one month at a time ---------- */
+const listEl = $('list');
+function renderList(){
+  const cur = ldgMonthOf(LedgerStore.today());
+  if (!listMonth || listMonth > cur) listMonth = cur;
+  const recs = ldgMonthRecords(LedgerStore.records(), listMonth), sum = ldgMonthSummary(LedgerStore.records(), listMonth);
+  $('monthLabel').innerHTML = esc(monthName(listMonth)) + (listMonth===cur ? '<small>本月</small>' : '');
+  $('nextMonth').disabled = listMonth >= cur;
+  $('sumLabel').textContent = `${+listMonth.slice(5,7)} 月合計`;
+  $('cnt').textContent = `${sum.count} 筆`;
+  $('total').textContent = money(sum.total);
+  /* budget (features 5–6): the moods follow THIS month; the bar shows only on this month's list, since the budget is
+     today's setting and past months may have had another one */
+  const budget = LedgerStore.settings().budget, bar = ldgBudgetBar(ldgMonthSummary(LedgerStore.records(), cur).total, budget);
+  yardMood = bar ? bar.mood : 'normal';
+  const showBar = bar && listMonth === cur;
+  $('bar').hidden = !showBar;
+  if (showBar){
+    $('bar').className = 'bar ' + bar.mood;
+    $('barFill').style.width = (bar.fill*100).toFixed(1) + '%';
+    $('budgetText').textContent = `預算 ${money(bar.budget)}・用了 ${bar.percent}%・` + (bar.over ? `超過 ${money(bar.over)}` : `還剩 ${money(bar.left)}`);
+  } else $('budgetText').textContent = budget ? `每月預算 ${money(budget)}（預算條只在本月顯示）` : '還沒設每月預算';
+  $('cA').textContent = placed.filter(p=>p.e.house==='anniu').length;
+  $('cH').textContent = placed.filter(p=>p.e.house==='haru').length;
+  /* a plain ledger: no decorations here (decided 2026-10-17); tap a row to change or delete it */
+  listEl.innerHTML = recs.length ? recs.map(e =>
+    `<li><button type="button" class="item" data-id="${esc(e.id)}"><span class="d">${shortDate(e.date)}</span><span class="n">${esc(e.note || '一筆花費')}<small>${HOUSES[e.house].name}</small></span><span class="v">${e.amount.toLocaleString('en-US')}</span></button></li>`
+  ).join('') : `<li class="empty">${+listMonth.slice(5,7)} 月還沒有帳。</li>`;
+  const trash = ldgTrash(LedgerStore.records()).length;
+  $('openTrash').textContent = trash ? `垃圾桶（${trash}）` : '垃圾桶';
+  const probs = LedgerStore.problems();
+  $('problems').hidden = !probs.length && !LedgerStore.readOnly();
+  $('problems').textContent = (LedgerStore.readOnly() ? '手機裡的帳目資料看不懂，為了不弄壞它，現在只能看、不能改（原資料另存了一份備份）。' : '') + probs.join('；');
+}
+$('prevMonth').addEventListener('click', () => { listMonth = ldgShiftMonth(listMonth, -1); renderList(); });
+$('nextMonth').addEventListener('click', () => { listMonth = ldgShiftMonth(listMonth, 1); renderList(); });
+listEl.addEventListener('click', ev => { const b = ev.target.closest('button.item'); if (b) openEdit(b.dataset.id); });
+
+/* ---------- edit dialog: amount / what for / date, delete, hang a taken-down decoration back ---------- */
+const editDlg = $('editDlg'); let editing = null;
+function openEdit(id){
+  const e = LedgerStore.find(id); if (!e) return;
+  editing = id;
+  $('eAmt').value = e.amount; $('eNote').value = e.note; $('eDate').value = e.date; $('eDate').max = LedgerStore.today();
+  $('editMeta').textContent = `${HOUSES[e.house].name}的狗屋・${e.deco ? decoLabel(e.deco) : '沒有裝飾'}`;
+  $('editStatus').textContent = '';
+  renderHang(e);
+  editDlg.showModal();
+}
+function renderHang(e){
+  const thisMonth = ldgMonthOf(e.date) === ldgMonthOf(LedgerStore.today());
+  $('hangRow').hidden = !e.deco || !thisMonth;   // only this month's decorations are in the yard
+  if (!e.deco || !thisMonth) return;
+  $('hangText').textContent = e.hidden ? `這筆的${decoLabel(e.deco)}收起來了。` : `這筆的${decoLabel(e.deco)}掛在院子裡。`;
+  $('hangBtn').textContent = e.hidden ? '掛回院子' : '收起裝飾';
+}
+$('hangBtn').addEventListener('click', () => {
+  const e = LedgerStore.find(editing); if (!e) return;
+  const r = LedgerStore.setHidden(e.id, !e.hidden);
+  if (!r.ok){ $('editStatus').textContent = r.message; return; }
+  if (!r.rec.hidden) bornAt[r.rec.id] = performance.now();
+  $('editStatus').textContent = r.rec.hidden ? '收起了，帳還在。' : '掛回去了。';
+  renderHang(r.rec);
+});
+$('editForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const chk = ldgCheckInput({amount:$('eAmt').value, note:$('eNote').value, date:$('eDate').value}, LedgerStore.today());
+  if (!chk.ok){ $('editStatus').textContent = chk.message; return; }
+  const r = LedgerStore.edit(editing, {amount:chk.value.amount, note:chk.value.note, date:chk.value.date});
+  if (!r.ok){ $('editStatus').textContent = r.message; return; }
+  editDlg.close();
+  status.textContent = r.same ? '沒有改到任何東西。' : r.full ? '改好了；這筆搬到本月，但位置滿了，裝飾先收起來。' : '改好了。';
+});
+$('cancelBtn').addEventListener('click', () => editDlg.close());
+$('delBtn').addEventListener('click', () => {
+  const r = LedgerStore.remove(editing);
+  if (!r.ok){ $('editStatus').textContent = r.message; return; }
+  editDlg.close();
+  status.textContent = `刪掉了（${shortDate(r.rec.date)}・${money(r.rec.amount)}），在垃圾桶裡可以還原。`;
+});
+
+/* ---------- settings (段 E): monthly budget, the person's own Google Sheet (Apps Script URL + password), sync ----------
+   The URL and password live only on this phone (store.js keeps them under their own key); never logged, never shown
+   back except the URL in its own field so its owner can fix it. The password field always starts empty. */
+const setDlg = $('setDlg');
+function openSettings(focus){
+  const b = LedgerStore.settings().budget;
+  $('bAmt').value = b === null ? '' : b; $('budgetStatus').textContent = '';
+  const ep = LedgerStore.endpoint();
+  $('lUrl').value = ep.url; $('lToken').value = '';
+  $('lToken').placeholder = ep.hasToken ? '已存在這台手機（不顯示）；要換才填' : 'Apps Script 指令碼屬性 TOKEN 的值';
+  $('unlink').hidden = !ep.configured;
+  $('linkStatus').textContent = '';
+  renderSync();
+  setDlg.showModal();
+  if (focus) $(focus).focus();
+}
+$('openSettings').addEventListener('click', () => openSettings());
+$('openBudget').addEventListener('click', () => openSettings('bAmt'));
+$('closeSet').addEventListener('click', () => setDlg.close());
+$('budgetForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const r = LedgerStore.setBudget($('bAmt').value);
+  $('budgetStatus').textContent = !r.ok ? r.message : r.same ? '預算沒有改。' : r.settings.budget === null ? '每月預算拿掉了，只顯示合計。' : `每月預算設成 ${money(r.settings.budget)}。`;
+});
+$('linkForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const r = LedgerStore.setEndpoint($('lUrl').value, $('lToken').value);
+  if (!r.ok){ $('linkStatus').textContent = r.message; $(r.field === 'token' ? 'lToken' : 'lUrl').focus(); return; }
+  $('lUrl').value = LedgerStore.endpoint().url; $('lToken').value = '';
+  $('lToken').placeholder = '已存在這台手機（不顯示）；要換才填';
+  $('unlink').hidden = false;
+  $('linkStatus').textContent = r.changed ? '存好了，開始同步（下面「同步」看進度）。' : '沒有改；照樣同步一次。';
+});
+$('testLink').addEventListener('click', () => {
+  const btn = $('testLink');
+  btn.disabled = true; $('linkStatus').textContent = '連線中…（最多等 20 秒）';
+  LedgerStore.testEndpoint($('lUrl').value, $('lToken').value).then(x => {
+    btn.disabled = false;
+    $('linkStatus').textContent = !x.ok ? x.message
+      : `連得上：試算表有 ${x.count} 筆帳` + (x.budget ? `、每月預算 ${money(x.budget)}` : '') + (x.warnings ? `；有 ${x.warnings} 列看不懂` : '') + '。還沒按「儲存」的話記得按。';
+  });
+});
+$('unlink').addEventListener('click', () => {
+  LedgerStore.clearEndpoint();
+  $('lUrl').value = ''; $('lToken').value = ''; $('lToken').placeholder = 'Apps Script 指令碼屬性 TOKEN 的值';
+  $('unlink').hidden = true;
+  $('linkStatus').textContent = '中斷了：這台手機忘掉網址和密碼，帳都還在手機裡；之後重新接上會補送。';
+});
+
+/* the sync status: one line under the list, and the same line (plus anything the sheet refused) in settings */
+function renderSync(){
+  const s = LedgerStore.syncState(), sum = ldgSyncSummary(s);
+  const text = s.readOnly && s.configured ? '手機裡的帳目資料看不懂，暫停同步（避免蓋掉）。'
+    : sum.text + (s.warnings.length ? `・試算表有 ${s.warnings.length} 則提醒（看設定）` : '');
+  const level = s.readOnly && s.configured ? 'bad' : sum.level;
+  $('syncRow').dataset.level = level; $('syncText').textContent = text;
+  $('setSyncRow').dataset.level = level; $('setSyncText').textContent = text;
+  $('syncBtn').hidden = !s.configured || s.readOnly; $('syncBtn').disabled = s.running;
+  $('setSyncBtn').hidden = !s.configured || s.readOnly; $('setSyncBtn').disabled = s.running;
+  const issues = s.invalid.map(x => {
+    const e = LedgerStore.find(x.id);
+    return (e ? `${shortDate(e.date)}・${money(e.amount)}・${e.note || '一筆花費'}` : x.id) + `：試算表不收（${x.problems.join('；') || '原因沒說'}），留在手機裡`;
+  }).concat(s.warnings);
+  $('syncIssues').hidden = !issues.length;
+  $('syncIssues').innerHTML = issues.map(t => `<li>${esc(t)}</li>`).join('');
+}
+$('syncBtn').addEventListener('click', () => LedgerStore.syncNow());
+$('setSyncBtn').addEventListener('click', () => LedgerStore.syncNow());
+LedgerStore.onSync(renderSync);
+
+/* ---------- trash: everything deleted, newest first, each can be restored ---------- */
+const trashDlg = $('trashDlg');
+function renderTrash(){
+  const recs = ldgTrash(LedgerStore.records());
+  $('trashList').innerHTML = recs.length ? recs.map(e =>
+    `<li><span class="n">${shortDate(e.date)}・${esc(e.note || '一筆花費')}<small>${HOUSES[e.house].name}・${money(e.amount)}</small></span><button type="button" class="ghost" data-restore="${esc(e.id)}">還原</button></li>`
+  ).join('') : '<li class="empty">垃圾桶是空的。</li>';
+}
+$('openTrash').addEventListener('click', () => { $('trashStatus').textContent = ''; renderTrash(); trashDlg.showModal(); });
+$('closeTrash').addEventListener('click', () => trashDlg.close());
+$('trashList').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-restore]'); if (!b) return;
+  const r = LedgerStore.restore(b.dataset.restore);
+  if (!r.ok){ $('trashStatus').textContent = r.message; return; }
+  if (r.rec.slot !== null && !r.rec.hidden && ldgMonthOf(r.rec.date) === yardMonth) bornAt[r.rec.id] = performance.now();
+  $('trashStatus').textContent = `還原了 ${shortDate(r.rec.date)}・${money(r.rec.amount)}` + (r.full ? '（院子位置滿了，裝飾先收起來）。' : '。');
+  renderTrash();
+});
+
+/* ---------- day / night ---------- */
+const themeBtn = $('theme');
+const renderTheme = () => { themeBtn.textContent = night ? '切到白天' : '切到晚上（燈籠會亮）'; };
+themeBtn.addEventListener('click', () => {
+  const t = night ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem(THEME_KEY, t); } catch(e){}
+});
+renderTheme();
+onTheme = () => { renderDecos(); renderList(); renderTheme(); closePop(); };
+
+/* ---------- keep everything in step ---------- */
+LedgerStore.onChange(r => {
+  layout(); renderList(); renderSync();
+  $('saveNote').textContent = r.saved === false ? '⚠️ 存不進這台手機' : '';
+  if (r.sync && editDlg.open && !LedgerStore.find(editing)) editDlg.close();
+});
+renderList();
+renderSync();
+LedgerStore.startAuto();   // sync on open, after each change, when back online, when the page comes back, and now and then
+/* the page may stay open past midnight: when the phone's month changes, the yard starts over */
+setInterval(() => {
+  const m = ldgMonthOf(LedgerStore.today());
+  if (m !== yardMonth){ const followed = listMonth === yardMonth; layout(); if (followed) listMonth = m; resetDate(); renderHouses(); renderList(); }
+  else if ($('date').max !== LedgerStore.today()) resetDate();
+}, 30000);
+/* 段 F: offline (sw.js keeps the page and pictures; built by tools/build-sw.js). Only on a secure origin (https or localhost):
+   file:// and plain http on the home Wi-Fi can't have one — skip quietly, the books work the same without it.
+   A new version waits for the next time the page is opened (no reload while someone is typing an entry) */
+if ('serviceWorker' in navigator && window.isSecureContext && /^https?:$/.test(location.protocol)) {
+  addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+})();
+</script>
+</body>
+</html>
